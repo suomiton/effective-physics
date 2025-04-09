@@ -1,0 +1,22 @@
+{
+  "name": "sand-physics-simulation",
+  "version": "1.0.0",
+  "description": "A web application for simulating sand physics with draggable blocks and particle interactions.",
+  "main": "src/js/app.js",
+  "scripts": {
+    "start": "live-server src",
+    "build": "echo 'Build step not defined'"
+  },
+  "keywords": [
+    "physics",
+    "simulation",
+    "sand",
+    "particles"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "live-server": "^1.2.1"
+  }
+}
