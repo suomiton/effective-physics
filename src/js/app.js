@@ -10,215 +10,116 @@
    - All collisions, gravity, and constraints handled by Matter.js.
 */
 
-const canvas = document.getElementById('simulationCanvas');
+// Get the original canvas
+const originalCanvas = document.getElementById('simulationCanvas');
 
-// Listen for selection changes and show error if unsupported
+// Initialize canvas manager
+const canvasSetup = CanvasManager.init(originalCanvas);
+let canvas = canvasSetup.canvas;
+const canvasContainer = canvasSetup.container;
+
+// Make renderer references globally available for coordinate conversion
+window.currentRenderer = null;
+window.render2D = null;
+window.renderWebGL = null;
+
+// Matter.js engine setup
+const engine = Matter.Engine.create({ enableSleeping: true });
+const world = engine.world;
+world.gravity.y = 1.0;
+
+// Create the engine runner
+const runner = Matter.Runner.create();
+Matter.Runner.run(runner, engine);
+
+// Create game objects
+const boundaries = PhysicsUtils.createBoundaries(canvas, world);
+const block = PhysicsUtils.createBlock(world, 300, 400, 50, 50);
+
+// Set up mouse interactions for dragging
+CanvasManager.setupMouseEvents(canvas, block, engine);
+
+// Initialize the default renderer (2D)
+initializeRenderer('2d');
+
+// Set up renderer switching UI
 const renderEngineSelect = document.getElementById('renderEngineSelect');
 if (renderEngineSelect) {
 	renderEngineSelect.addEventListener('change', () => {
 		const chosen = renderEngineSelect.value;
-		const testCtx = canvas.getContext(chosen);
-		if (!testCtx) {
-			alert(`Renderer "${chosen}" is not supported, falling back to 2D`);
-			render.context = canvas.getContext('2d');
-		} else {
-			alert(`Renderer "${chosen}" selected!`);
-			render.context = testCtx;
+		try {
+			switchRenderer(chosen);
+		} catch (e) {
+			console.error("Failed to switch renderer:", e);
+			alert("Failed to switch renderer. Please refresh the page.");
 		}
 	});
 }
 
-// Matter.js modules
-const Engine = Matter.Engine;
-const Render = Matter.Render;
-const Runner = Matter.Runner;
-const World = Matter.World;
-const Bodies = Matter.Bodies;
-const Body = Matter.Body;
-const Constraint = Matter.Constraint;
-
-// Create Engine & World (enable y-axis gravity)
-const engine = Engine.create({ enableSleeping: true });
-const world = engine.world;
-world.gravity.y = 1.0;
-
-// Default to 2D context
-const ctx = canvas.getContext('2d');
-
-// Create a Matter.js renderer tied to your existing canvas
-const render = Render.create({
-	engine: engine,
-	canvas: canvas,
-	context: ctx,
-	options: {
-		width: canvas.width,
-		height: canvas.height,
-		wireframes: false,
-		background: '#ffffff'
-	}
+// Set up sand button
+document.getElementById('dropSandButton').addEventListener('click', () => {
+	PhysicsUtils.dropSand(canvas, world);
 });
-Render.run(render);
 
-// Create and run the engine’s runner
-const runner = Runner.create();
-Runner.run(runner, engine);
+/**
+ * Switch between renderers
+ */
+function switchRenderer(rendererType) {
+	// Stop current renderer
+	stopCurrentRenderer();
 
-// Add static boundary walls so objects stay in view
-const wallThickness = 50;
-// Floor
-const floor = Bodies.rectangle(
-	canvas.width / 2,
-	canvas.height + wallThickness / 2,
-	canvas.width,
-	wallThickness,
-	{ isStatic: true }
-);
-// Ceiling
-const ceiling = Bodies.rectangle(
-	canvas.width / 2,
-	-wallThickness / 2,
-	canvas.width,
-	wallThickness,
-	{ isStatic: true }
-);
-// Left wall
-const leftWall = Bodies.rectangle(
-	-wallThickness / 2,
-	canvas.height / 2,
-	wallThickness,
-	canvas.height,
-	{ isStatic: true }
-);
-// Right wall
-const rightWall = Bodies.rectangle(
-	canvas.width + wallThickness / 2,
-	canvas.height / 2,
-	wallThickness,
-	canvas.height,
-	{ isStatic: true }
-);
-World.add(world, [floor, ceiling, leftWall, rightWall]);
+	// Replace canvas
+	canvas = CanvasManager.replaceCanvas(canvasContainer);
 
-// Create the block as a dynamic body
-const blockWidth = 50;
-const blockHeight = 50;
-const block = Bodies.rectangle(300, 400, blockWidth, blockHeight, {
-	mass: 10,
-	frictionAir: 0.0,   // No air resistance
-	restitution: 0,
-	render: { fillStyle: 'blue' }
-});
-World.add(world, block);
+	// Set up mouse events for the new canvas
+	CanvasManager.setupMouseEvents(canvas, block, engine);
 
-// Example array of sand colors
-const sandColors = [
-	'#E6C288',
-	'#D4B16A',
-	'#C19A53',
-	'#B3894D',
-	'#F0D6A7'
-];
+	// Initialize the new renderer
+	initializeRenderer(rendererType);
+}
 
-// Function to create sand particles with random color, small radius, etc.
-function dropSand() {
-	const clusterCenter = { x: canvas.width / 2, y: 100 };
-	const clusterRadius = 80;
-	const positions = [];
-	const maxAttempts = 300;
+/**
+ * Initialize the specified renderer
+ */
+function initializeRenderer(rendererType) {
+	try {
+		if (rendererType === 'webgl') {
+			window.renderWebGL = RendererWebGL.create(engine, canvas);
+			RendererWebGL.start(window.renderWebGL);
+			window.currentRenderer = 'webgl';
+		} else {
+			window.render2D = Renderer2D.create(engine, canvas);
+			Renderer2D.start(window.render2D);
+			window.currentRenderer = '2d';
+		}
+	} catch (e) {
+		console.error(`Failed to initialize ${rendererType} renderer:`, e);
 
-	for (let i = 0; i < 500; i++) {
-		let validPos = null;
-		for (let attempt = 0; attempt < maxAttempts && !validPos; attempt++) {
-			const angle = Math.random() * 2 * Math.PI;
-			const r = Math.random() * clusterRadius;
-			const xPos = clusterCenter.x + r * Math.cos(angle);
-			const yPos = clusterCenter.y + r * Math.sin(angle);
-			let tooClose = false;
-			for (const p of positions) {
-				const dx = xPos - p.x;
-				const dy = yPos - p.y;
-				if (Math.sqrt(dx * dx + dy * dy) < 2) {
-					tooClose = true;
-					break;
-				}
-			}
-			if (!tooClose) {
-				validPos = { x: xPos, y: yPos };
-				positions.push(validPos);
+		// If WebGL fails, try 2D as fallback
+		if (rendererType === 'webgl' && !render2D) {
+			alert("WebGL renderer failed. Falling back to 2D renderer.");
+			try {
+				render2D = Renderer2D.create(engine, canvas);
+				Renderer2D.start(render2D);
+				window.currentRenderer = '2d';
+			} catch (fallbackError) {
+				console.error("Even 2D fallback failed:", fallbackError);
+				alert("All renderers failed. Please check your browser compatibility.");
 			}
 		}
-		if (!validPos) continue; // Could not find non-overlapping position
-
-		const particle = Bodies.circle(validPos.x, validPos.y, 2, {
-			mass: 0.01,
-			restitution: 0.0,
-			friction: 0.1,
-			frictionAir: 0.01,
-			render: {
-				fillStyle: sandColors[Math.floor(Math.random() * sandColors.length)]
-			}
-		});
-		World.add(world, particle);
 	}
 }
 
-// Hook the “Drop Sand” button
-document.getElementById('dropSandButton').addEventListener('click', dropSand);
-
-// ------------------------------------
-// CUSTOM HINGE-LIKE DRAGGING BELOW
-// ------------------------------------
-
-// We'll track a single mouse constraint for dragging the block
-let dragConstraint = null;
-let isDragging = false;
-
-// Listen for mousedown to create a pivot constraint if clicking the block
-canvas.addEventListener('mousedown', (e) => {
-	const rect = canvas.getBoundingClientRect();
-	const mouseX = e.clientX - rect.left;
-	const mouseY = e.clientY - rect.top;
-
-	// Convert screen coords to Matter.js world coords
-	// (render.viewport transforms typically, but if scale=1 and no translation, it’s direct)
-	const worldPos = { x: mouseX, y: mouseY };
-
-	// Use Matter.Query.point to see if we clicked the block
-	const bodiesAtPoint = Matter.Query.point([block], worldPos);
-	if (bodiesAtPoint.length > 0) {
-		// We clicked the block; create a new constraint from block to mouse
-		isDragging = true;
-		dragConstraint = Constraint.create({
-			bodyA: block,
-			// The local offset in bodyA where you clicked (convert global to local)
-			pointA: {
-				x: worldPos.x - block.position.x,
-				y: worldPos.y - block.position.y
-			},
-			pointB: worldPos,
-			stiffness: 0.02,
-			render: { visible: false }
-		});
-		World.add(world, dragConstraint);
+/**
+ * Stop the current renderer
+ */
+function stopCurrentRenderer() {
+	if (window.currentRenderer === 'webgl' && window.renderWebGL) {
+		RendererWebGL.stop(window.renderWebGL);
+		window.renderWebGL = null;
+	} else if (window.currentRenderer === '2d' && window.render2D) {
+		Renderer2D.stop(window.render2D);
+		window.render2D = null;
 	}
-});
-
-canvas.addEventListener('mousemove', (e) => {
-	if (!isDragging || !dragConstraint) return;
-
-	// Update constraint’s pointB to current mouse pos
-	const rect = canvas.getBoundingClientRect();
-	const mouseX = e.clientX - rect.left;
-	const mouseY = e.clientY - rect.top;
-	dragConstraint.pointB = { x: mouseX, y: mouseY };
-});
-
-canvas.addEventListener('mouseup', () => {
-	if (dragConstraint) {
-		World.remove(world, dragConstraint);
-		dragConstraint = null;
-		isDragging = false;
-	}
-});
-
-// That’s it! Matter.js handles collisions, gravity, and your custom hinge-like dragging.
+	window.currentRenderer = null;
+}

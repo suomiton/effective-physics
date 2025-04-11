@@ -12,14 +12,22 @@
 	<canvas id="simulationCanvas" width="640" height="480"></canvas>
 	<button id="dropSandButton">Drop Sand</button>
 	<select id="renderEngineSelect">
-		<option value="webgl">WebGL</option>
 		<option value="2d">Canvas 2D</option>
+		<option value="webgl">Three.js (WebGL)</option>
 	</select>
 
 	<!-- Add Matter.js from CDN -->
 	<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+	<!-- Add Three.js -->
+	<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+	<!-- Add Matter-THREE integration -->
+	<script src="js/matter-three.js"></script>
 
-	<!-- Your modified app.js -->
+	<!-- Modular code organization -->
+	<script src="js/shared.js"></script>
+	<script src="js/canvas-manager.js"></script>
+	<script src="js/renderer-2d.js"></script>
+	<script src="js/renderer-webgl.js"></script>
 	<script src="js/app.js"></script>
 </body>
 
