@@ -35,13 +35,13 @@ const RendererWebGL = {
 					// Create orthographic camera to match 2D coordinates exactly
 					// Note: We're inverting the top/bottom to match Matter.js Y coordinates
 					this.camera = new THREE.OrthographicCamera(
-						0, this.canvas.width, // left, right
-						this.canvas.height, 0, // top, bottom (corrected to match Matter.js Y-axis)
+						-this.canvas.width / 2, this.canvas.width / 2, // left, right
+						this.canvas.height / 2, -this.canvas.height / 2, // top, bottom
 						0.1, 1000 // near, far
 					);
-					// Position the camera to look at the scene from the front
-					this.camera.position.z = 100;
-					this.camera.lookAt(new THREE.Vector3(this.canvas.width / 2, this.canvas.height / 2, 0));
+					// Center the camera on the canvas
+					this.camera.position.set(0, 0, 100);
+					this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 					// Add ambient light
 					const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -56,9 +56,7 @@ const RendererWebGL = {
 						opacity: 0.5
 					});
 					const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-					ground.position.x = this.canvas.width / 2;
-					ground.position.y = this.canvas.height / 2;
-					ground.position.z = -5;
+					ground.position.set(0, 0, -5); // Centered at (0, 0) in the camera's view
 					this.scene.add(ground);
 
 					// Optional grid helper
@@ -66,9 +64,7 @@ const RendererWebGL = {
 						const gridSize = Math.max(this.canvas.width, this.canvas.height);
 						const gridHelper = new THREE.GridHelper(gridSize, 10, 0x888888, 0xdddddd);
 						gridHelper.rotation.x = Math.PI / 2;
-						gridHelper.position.x = this.canvas.width / 2;
-						gridHelper.position.y = this.canvas.height / 2;
-						gridHelper.position.z = -1;
+						gridHelper.position.set(0, 0, -1); // Centered at (0, 0) in the camera's view
 						this.scene.add(gridHelper);
 					} catch (e) {
 						console.warn("Could not add grid helper:", e);
@@ -170,8 +166,8 @@ const RendererWebGL = {
 							const mesh = this.bodies.get(body.id);
 							if (mesh) {
 								mesh.position.set(
-									body.position.x,
-									body.position.y, // No need to flip Y with our camera setup
+									body.position.x - this.canvas.width / 2, // Adjust for camera centering
+									this.canvas.height / 2 - body.position.y, // Adjust for camera centering and flip Y-axis
 									0
 								);
 								mesh.rotation.z = -body.angle;
