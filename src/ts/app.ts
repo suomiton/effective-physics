@@ -175,33 +175,5 @@ async function initializeRenderer(
 	}
 }
 
-/**
- * Stop the current active renderer
- * Halts rendering loop and cleans up resources
- */
-function stopCurrentRenderer(): void {
-	if (window.render2D) {
-		Renderer2D.stop(window.render2D);
-		window.render2D = null;
-	}
-
-	if (window.renderWebGL) {
-		window.renderWebGL.stop();
-		window.renderWebGL = null;
-	}
-}
-
-/**
- * Update URL parameter without reloading the page
- *
- * @param {string} key - The parameter name
- * @param {string} value - The parameter value
- */
-function updateURLParameter(key: string, value: string): void {
-	const url = new URL(window.location.href);
-	url.searchParams.set(key, value);
-	window.history.pushState({ path: url.href }, "", url.href);
-}
-
 // Initialize application when DOM content is loaded
 document.addEventListener("DOMContentLoaded", initApp);

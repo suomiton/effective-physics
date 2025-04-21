@@ -54,26 +54,6 @@ export interface RendererWebGLConfig {
 	usesOrthographicCamera: boolean;
 }
 
-export interface MatterThreeInstance {
-	engine: Matter.Engine;
-	element: HTMLElement;
-	canvas: HTMLCanvasElement | null;
-	width: number;
-	height: number;
-	background: string | number;
-	wireframeBackground: boolean;
-	hasShadows: boolean;
-	scene: THREE.Scene;
-	renderer: THREE.WebGLRenderer;
-	camera: THREE.Camera;
-	bodies: Map<number, THREE.Mesh>;
-	frameRequestId?: number;
-	createBodyMesh(body: Matter.Body): THREE.Mesh;
-	updateScene(): void;
-	run(): void;
-	stop(): void;
-}
-
 export interface MousePosition {
 	x: number;
 	y: number;
