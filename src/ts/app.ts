@@ -69,9 +69,6 @@ function initApp(): void {
 		interactiveWorld.create(config);
 	}
 
-	// Add a demo button to create new blocks
-	setupDemoButtons();
-
 	// Check URL query parameters for renderer selection
 	const urlParams = new URLSearchParams(window.location.search);
 	const rendererParam = urlParams.get("renderer");
@@ -134,55 +131,6 @@ function initApp(): void {
 	// Start the physics engine
 	const runner = Matter.Runner.create();
 	Matter.Runner.run(runner, engine);
-}
-
-/**
- * Set up demo buttons for creating interactive blocks
- */
-function setupDemoButtons(): void {
-	// Create add block button
-	const addBlockButton = document.createElement("button");
-	addBlockButton.textContent = "Add Random Block";
-	addBlockButton.addEventListener("click", () => {
-		// Get random position within canvas
-		const width = Constants.CANVAS.WIDTH;
-		const height = Constants.CANVAS.HEIGHT;
-		const x = Math.random() * (width - 100) + 50;
-		const y = Math.random() * (height - 200) + 50;
-
-		// Random properties
-		const isCircle = Math.random() > 0.5;
-		const size = Math.random() * 40 + 20;
-		const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-
-		// Create the object config
-		const config: Partial<InteractiveObjectConfig> = {
-			type: isCircle ? "circle" : "rectangle",
-			x,
-			y,
-			color,
-			mass: Math.random() * 10 + 1,
-			restitution: Math.random() * 0.5,
-		};
-
-		// Add type-specific properties
-		if (isCircle) {
-			config.radius = size;
-		} else {
-			config.width = size * 1.5;
-			config.height = size;
-		}
-
-		// Create the object
-		const block = window.interactiveWorld.create(config);
-		console.log("Created new block:", block);
-	});
-
-	// Add to controls
-	const controls = document.querySelector(".controls");
-	if (controls) {
-		controls.appendChild(addBlockButton);
-	}
 }
 
 /**
