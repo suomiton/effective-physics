@@ -7,26 +7,7 @@
  */
 
 import * as Matter from "matter-js";
-
-// Import only the specific Three.js components we need
-import {
-	Scene,
-	WebGLRenderer,
-	OrthographicCamera,
-	AmbientLight,
-	DirectionalLight,
-	PlaneGeometry,
-	MeshBasicMaterial,
-	MeshLambertMaterial,
-	CircleGeometry,
-	ShapeGeometry,
-	Mesh,
-	Shape,
-	Color,
-	PCFSoftShadowMap,
-	Material,
-} from "three";
-
+import * as THREE from "three";
 import Constants from "./constants";
 import type { MatterThreeInstance } from "./types";
 
@@ -56,10 +37,10 @@ export function MatterThree(options: {
 		background: options.background || Constants.COLORS.BACKGROUND,
 		wireframeBackground: options.wireframeBackground || false,
 		hasShadows: options.hasShadows !== undefined ? options.hasShadows : true,
-		scene: new Scene(),
-		renderer: new WebGLRenderer(),
-		camera: new OrthographicCamera(-1, 1, 1, -1, 0.1, 1000),
-		bodies: new Map<number, Mesh>(),
+		scene: new THREE.Scene(),
+		renderer: new THREE.WebGLRenderer(),
+		camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000),
+		bodies: new Map<number, THREE.Mesh>(),
 		frameRequestId: undefined,
 
 		/**
@@ -69,62 +50,73 @@ export function MatterThree(options: {
 		 * @param {Matter.Body} body - The physics body
 		 * @returns {Mesh} - The 3D mesh
 		 */
-		createBodyMesh: function (body: Matter.Body): Mesh {
-			// Default material
-			const material = new MeshLambertMaterial({
-				color:
-					body.render && body.render.fillStyle
-						? new Color(body.render.fillStyle)
-						: new Color(Constants.COLORS.DEFAULT_OBJECT),
-				wireframe: false,
-			});
+		createBodyMesh: function (body: Matter.Body): THREE.Mesh {
+			try {
+				// Default material
+				const material = new THREE.MeshLambertMaterial({
+					color:
+						body.render && body.render.fillStyle
+							? new THREE.Color(body.render.fillStyle)
+							: new THREE.Color(Constants.COLORS.DEFAULT_OBJECT),
+					wireframe: false,
+				});
 
-			let mesh: Mesh;
+				let mesh: THREE.Mesh;
 
-			// Create appropriate geometry based on body type
-			if (body.circleRadius) {
-				// Circle/sphere geometry
-				const geometry = new CircleGeometry(body.circleRadius, 24);
-				mesh = new Mesh(geometry, material);
-			} else {
-				// Polygon geometry from vertices
-				const shape = new Shape();
+				// Create appropriate geometry based on body type
+				if (body.circleRadius) {
+					// Circle/sphere geometry
+					const geometry = new THREE.CircleGeometry(body.circleRadius, 24);
+					mesh = new THREE.Mesh(geometry, material);
+				} else {
+					// Polygon geometry from vertices
+					const shape = new THREE.Shape();
 
-				if (body.vertices && body.vertices.length > 0) {
-					const firstVertex = Matter.Vector.sub(
-						body.vertices[0],
-						body.position
-					);
-					shape.moveTo(firstVertex.x, firstVertex.y);
+					if (body.vertices && body.vertices.length > 0) {
+						const firstVertex = Matter.Vector.sub(
+							body.vertices[0],
+							body.position
+						);
+						shape.moveTo(firstVertex.x, firstVertex.y);
 
-					// Create shape from remaining vertices
-					for (let i = 1; i < body.vertices.length; i++) {
-						const vertex = Matter.Vector.sub(body.vertices[i], body.position);
-						shape.lineTo(vertex.x, vertex.y);
+						// Create shape from remaining vertices
+						for (let i = 1; i < body.vertices.length; i++) {
+							const vertex = Matter.Vector.sub(body.vertices[i], body.position);
+							shape.lineTo(vertex.x, vertex.y);
+						}
+
+						shape.closePath();
+					} else {
+						// Fallback for bodies without proper vertices
+						shape.moveTo(-10, -10);
+						shape.lineTo(10, -10);
+						shape.lineTo(10, 10);
+						shape.lineTo(-10, 10);
+						shape.closePath();
 					}
 
-					shape.closePath();
-				} else {
-					// Fallback for bodies without proper vertices
-					shape.moveTo(-10, -10);
-					shape.lineTo(10, -10);
-					shape.lineTo(10, 10);
-					shape.lineTo(-10, 10);
-					shape.closePath();
+					// Create flat geometry from shape
+					const geometry = new THREE.ShapeGeometry(shape);
+					mesh = new THREE.Mesh(geometry, material);
 				}
 
-				// Create flat geometry from shape
-				const geometry = new ShapeGeometry(shape);
-				mesh = new Mesh(geometry, material);
-			}
+				// Configure shadows
+				if (this.hasShadows) {
+					mesh.castShadow = true;
+					mesh.receiveShadow = true;
+				}
 
-			// Configure shadows
-			if (this.hasShadows) {
-				mesh.castShadow = true;
-				mesh.receiveShadow = true;
+				return mesh;
+			} catch (error) {
+				console.error("Error creating body mesh:", error);
+				// Create a fallback mesh if there's an error
+				const geometry = new THREE.PlaneGeometry(20, 20);
+				const material = new THREE.MeshBasicMaterial({
+					color: 0xff0000,
+					wireframe: true,
+				});
+				return new THREE.Mesh(geometry, material);
 			}
-
-			return mesh;
 		},
 
 		/**
@@ -132,39 +124,43 @@ export function MatterThree(options: {
 		 * Synchronizes Three.js objects with Matter.js bodies
 		 */
 		updateScene: function (): void {
-			const bodies = Matter.Composite.allBodies(this.engine.world);
-			const currentBodyIds = new Set<number>();
+			try {
+				const bodies = Matter.Composite.allBodies(this.engine.world);
+				const currentBodyIds = new Set<number>();
 
-			// Update or create meshes for each body
-			bodies.forEach((body) => {
-				currentBodyIds.add(body.id);
+				// Update or create meshes for each body
+				bodies.forEach((body) => {
+					currentBodyIds.add(body.id);
 
-				// Get or create mesh
-				let mesh = this.bodies.get(body.id);
-				if (!mesh) {
-					mesh = this.createBodyMesh(body);
-					this.scene.add(mesh);
-					this.bodies.set(body.id, mesh);
-				}
-
-				// Update position and rotation
-				mesh.position.set(body.position.x, body.position.y, 0);
-				mesh.rotation.z = body.angle;
-			});
-
-			// Remove meshes for bodies that no longer exist
-			this.bodies.forEach((mesh, id) => {
-				if (!currentBodyIds.has(id)) {
-					this.scene.remove(mesh);
-					if (mesh.geometry) mesh.geometry.dispose();
-					if (mesh.material instanceof Material) {
-						mesh.material.dispose();
-					} else if (Array.isArray(mesh.material)) {
-						mesh.material.forEach((material) => material.dispose());
+					// Get or create mesh
+					let mesh = this.bodies.get(body.id);
+					if (!mesh) {
+						mesh = this.createBodyMesh(body);
+						this.scene.add(mesh);
+						this.bodies.set(body.id, mesh);
 					}
-					this.bodies.delete(id);
-				}
-			});
+
+					// Update position and rotation
+					mesh.position.set(body.position.x, body.position.y, 0);
+					mesh.rotation.z = body.angle;
+				});
+
+				// Remove meshes for bodies that no longer exist
+				this.bodies.forEach((mesh, id) => {
+					if (!currentBodyIds.has(id)) {
+						this.scene.remove(mesh);
+						if (mesh.geometry) mesh.geometry.dispose();
+						if (mesh.material instanceof THREE.Material) {
+							mesh.material.dispose();
+						} else if (Array.isArray(mesh.material)) {
+							mesh.material.forEach((material) => material.dispose());
+						}
+						this.bodies.delete(id);
+					}
+				});
+			} catch (error) {
+				console.error("Error updating scene:", error);
+			}
 		},
 
 		/**
@@ -174,8 +170,13 @@ export function MatterThree(options: {
 		run: function (): void {
 			const update = (): void => {
 				this.frameRequestId = requestAnimationFrame(update);
-				this.updateScene();
-				this.renderer.render(this.scene, this.camera);
+				try {
+					this.updateScene();
+					this.renderer.render(this.scene, this.camera);
+				} catch (error) {
+					console.error("Error in render loop:", error);
+					this.stop(); // Stop the renderer if there's an error
+				}
 			};
 
 			update();
@@ -195,91 +196,99 @@ export function MatterThree(options: {
 
 	// Initialize the renderer
 	(function initialize(): void {
-		// Create or use existing canvas
-		if (!instance.element.querySelector("canvas")) {
-			instance.canvas = document.createElement("canvas");
-			instance.element.appendChild(instance.canvas);
-		} else {
-			instance.canvas = instance.element.querySelector("canvas");
-		}
+		try {
+			// Create or use existing canvas
+			if (!instance.element.querySelector("canvas")) {
+				instance.canvas = document.createElement("canvas");
+				instance.element.appendChild(instance.canvas);
+			} else {
+				instance.canvas = instance.element.querySelector("canvas");
+			}
 
-		if (!instance.canvas) {
-			throw new Error("Failed to create or find canvas element");
-		}
+			if (!instance.canvas) {
+				throw new Error("Failed to create or find canvas element");
+			}
 
-		// Set canvas dimensions
-		instance.canvas.width = instance.width;
-		instance.canvas.height = instance.height;
+			// Set canvas dimensions
+			instance.canvas.width = instance.width;
+			instance.canvas.height = instance.height;
 
-		// Initialize Three.js renderer
-		instance.renderer = new WebGLRenderer({
-			canvas: instance.canvas,
-			antialias: true,
-			alpha: true,
-		});
-
-		instance.renderer.setSize(instance.width, instance.height);
-		instance.renderer.setClearColor(new Color(instance.background), 1);
-
-		// Set up shadows
-		if (instance.hasShadows) {
-			instance.renderer.shadowMap.enabled = true;
-			instance.renderer.shadowMap.type = PCFSoftShadowMap;
-		}
-
-		// Initialize camera
-		const halfWidth = instance.width / 2;
-		const halfHeight = instance.height / 2;
-
-		instance.camera = new OrthographicCamera(
-			-halfWidth,
-			halfWidth,
-			halfHeight,
-			-halfHeight,
-			1,
-			1000
-		);
-
-		instance.camera.position.z = 500;
-
-		// Initialize scene lighting
-		const ambientLight = new AmbientLight(0xffffff, 0.5);
-		instance.scene.add(ambientLight);
-
-		const directionalLight = new DirectionalLight(0xffffff, 0.8);
-		directionalLight.position.set(instance.width / 2, instance.height / 2, 100);
-
-		if (instance.hasShadows) {
-			directionalLight.castShadow = true;
-			directionalLight.shadow.camera.left = -halfWidth;
-			directionalLight.shadow.camera.right = halfWidth;
-			directionalLight.shadow.camera.top = halfHeight;
-			directionalLight.shadow.camera.bottom = -halfHeight;
-			directionalLight.shadow.camera.near = 50;
-			directionalLight.shadow.camera.far = 200;
-			directionalLight.shadow.mapSize.width = 1024;
-			directionalLight.shadow.mapSize.height = 1024;
-		}
-
-		instance.scene.add(directionalLight);
-
-		// Add wireframe ground plane if enabled
-		if (instance.wireframeBackground) {
-			const planeGeometry = new PlaneGeometry(
-				instance.width,
-				instance.height,
-				12,
-				12
-			);
-
-			const planeMaterial = new MeshBasicMaterial({
-				color: 0xcccccc,
-				wireframe: true,
+			// Initialize Three.js renderer
+			instance.renderer = new THREE.WebGLRenderer({
+				canvas: instance.canvas,
+				antialias: true,
+				alpha: true,
 			});
 
-			const plane = new Mesh(planeGeometry, planeMaterial);
-			plane.position.z = -5;
-			instance.scene.add(plane);
+			instance.renderer.setSize(instance.width, instance.height);
+			instance.renderer.setClearColor(new THREE.Color(instance.background), 1);
+
+			// Set up shadows
+			if (instance.hasShadows) {
+				instance.renderer.shadowMap.enabled = true;
+				instance.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			}
+
+			// Initialize camera
+			const halfWidth = instance.width / 2;
+			const halfHeight = instance.height / 2;
+
+			instance.camera = new THREE.OrthographicCamera(
+				-halfWidth,
+				halfWidth,
+				halfHeight,
+				-halfHeight,
+				1,
+				1000
+			);
+
+			instance.camera.position.z = 500;
+
+			// Initialize scene lighting
+			const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+			instance.scene.add(ambientLight);
+
+			const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+			directionalLight.position.set(
+				instance.width / 2,
+				instance.height / 2,
+				100
+			);
+
+			if (instance.hasShadows) {
+				directionalLight.castShadow = true;
+				directionalLight.shadow.camera.left = -halfWidth;
+				directionalLight.shadow.camera.right = halfWidth;
+				directionalLight.shadow.camera.top = halfHeight;
+				directionalLight.shadow.camera.bottom = -halfHeight;
+				directionalLight.shadow.camera.near = 50;
+				directionalLight.shadow.camera.far = 200;
+				directionalLight.shadow.mapSize.width = 1024;
+				directionalLight.shadow.mapSize.height = 1024;
+			}
+
+			instance.scene.add(directionalLight);
+
+			// Add wireframe ground plane if enabled
+			if (instance.wireframeBackground) {
+				const planeGeometry = new THREE.PlaneGeometry(
+					instance.width,
+					instance.height,
+					12,
+					12
+				);
+
+				const planeMaterial = new THREE.MeshBasicMaterial({
+					color: 0xcccccc,
+					wireframe: true,
+				});
+
+				const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+				plane.position.z = -5;
+				instance.scene.add(plane);
+			}
+		} catch (error) {
+			console.error("Error initializing MatterThree:", error);
 		}
 	})();
 

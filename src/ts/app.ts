@@ -59,17 +59,36 @@ function initApp(): void {
 	// Set up mouse interactions
 	CanvasManager.setupMouseEvents(canvas, block, engine);
 
-	// Initialize renderer based on dropdown selection or default
+	// Check URL query parameters for renderer selection
+	const urlParams = new URLSearchParams(window.location.search);
+	const rendererParam = urlParams.get("renderer");
+	let rendererFromURL: string | null = null;
+
+	// Validate renderer from URL
+	if (
+		rendererParam === Constants.RENDERER.CANVAS_2D ||
+		rendererParam === Constants.RENDERER.WEBGL
+	) {
+		rendererFromURL = rendererParam;
+	}
+
+	// Initialize renderer based on dropdown selection, URL parameter, or default
 	const rendererSelect = document.getElementById(
 		"rendererSelect"
 	) as HTMLSelectElement;
 
-	// Use WebGL renderer by default if available
-	let currentRenderer = rendererSelect
-		? rendererSelect.value
-		: Constants.RENDERER.WEBGL;
+	// Determine renderer priority: URL param > select element > default
+	let currentRenderer =
+		rendererFromURL ||
+		(rendererSelect ? rendererSelect.value : Constants.RENDERER.WEBGL);
+
 	if (!currentRenderer) {
 		currentRenderer = Constants.RENDERER.WEBGL;
+	}
+
+	// Update the select element to match the chosen renderer
+	if (rendererSelect && rendererFromURL) {
+		rendererSelect.value = rendererFromURL;
 	}
 
 	// Store current renderer selection in global variable
@@ -84,20 +103,10 @@ function initApp(): void {
 			const target = e.target as HTMLSelectElement;
 			const newRenderer = target.value;
 
-			// Stop current renderer
-			stopCurrentRenderer();
-
-			// Replace canvas with a fresh one
-			const newCanvas = CanvasManager.replaceCanvas(container);
-
-			// Initialize new renderer
-			initializeRenderer(newRenderer, engine, newCanvas, container);
-
-			// Update global variable
-			window.currentRenderer = newRenderer;
-
-			// Re-setup mouse events with new canvas and renderer
-			CanvasManager.setupMouseEvents(newCanvas, block, engine);
+			// Update URL with the new renderer parameter and reload the page
+			const url = new URL(window.location.href);
+			url.searchParams.set("renderer", newRenderer);
+			window.location.href = url.href; // This causes a page refresh
 		});
 	}
 
@@ -180,6 +189,18 @@ function stopCurrentRenderer(): void {
 		window.renderWebGL.stop();
 		window.renderWebGL = null;
 	}
+}
+
+/**
+ * Update URL parameter without reloading the page
+ *
+ * @param {string} key - The parameter name
+ * @param {string} value - The parameter value
+ */
+function updateURLParameter(key: string, value: string): void {
+	const url = new URL(window.location.href);
+	url.searchParams.set(key, value);
+	window.history.pushState({ path: url.href }, "", url.href);
 }
 
 // Initialize application when DOM content is loaded
