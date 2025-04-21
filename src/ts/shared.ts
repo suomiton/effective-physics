@@ -7,6 +7,7 @@
  * other common physics operations used throughout the simulation.
  */
 
+import * as Matter from "matter-js";
 import Constants from "./constants";
 import type { Boundaries } from "./types";
 

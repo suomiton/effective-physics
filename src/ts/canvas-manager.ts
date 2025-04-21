@@ -8,6 +8,7 @@
  * between the DOM and the physics simulation.
  */
 
+import * as Matter from "matter-js";
 import Constants from "./constants";
 import type { CanvasSetup, MousePosition } from "./types";
 

@@ -5,6 +5,8 @@
  * This file defines interfaces and types used throughout the application.
  */
 
+import * as Matter from "matter-js";
+import * as THREE from "three";
 import Constants from "./constants";
 
 export interface CanvasSetup {
@@ -84,5 +86,7 @@ declare global {
 		currentRenderer: string | null;
 		render2D: Matter.Render | null;
 		renderWebGL: RendererWebGLInstance | null;
+		Matter: typeof Matter;
+		THREE: typeof THREE;
 	}
 }

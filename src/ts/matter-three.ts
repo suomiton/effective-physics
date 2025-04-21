@@ -6,6 +6,8 @@
  * rendering, providing a basic class for visualizing Matter.js bodies with Three.js.
  */
 
+import * as Matter from "matter-js";
+import * as THREE from "three";
 import Constants from "./constants";
 import type { MatterThreeInstance } from "./types";
 

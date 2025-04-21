@@ -7,13 +7,15 @@
  * coordinator between physics, rendering, and user interaction components.
  */
 
+import * as Matter from "matter-js";
 import Constants from "./constants";
 import { CanvasManager } from "./canvas-manager";
 import { PhysicsUtils } from "./shared";
 import { Renderer2D } from "./renderer-2d";
-import { createWebGLRenderer } from "./renderer-webgl";
-import { MatterThree } from "./matter-three";
 import type { RendererWebGLInstance } from "./types";
+
+// Add Matter.js to window for legacy compatibility
+(window as any).Matter = Matter;
 
 /**
  * Initialize the application
@@ -121,12 +123,12 @@ function initApp(): void {
  * @param {HTMLCanvasElement} canvas - The canvas element
  * @param {HTMLDivElement} container - The canvas container
  */
-function initializeRenderer(
+async function initializeRenderer(
 	rendererType: string,
 	engine: Matter.Engine,
 	canvas: HTMLCanvasElement,
 	container: HTMLDivElement
-): void {
+): Promise<void> {
 	if (rendererType === Constants.RENDERER.CANVAS_2D) {
 		// Initialize 2D Canvas renderer
 		try {
@@ -140,8 +142,15 @@ function initializeRenderer(
 			initializeRenderer(Constants.RENDERER.WEBGL, engine, canvas, container);
 		}
 	} else if (rendererType === Constants.RENDERER.WEBGL) {
-		// Initialize WebGL renderer
+		// Initialize WebGL renderer - lazy load Three.js and the renderer
 		try {
+			// Dynamically import Three.js and the WebGL renderer
+			const THREE = await import("three");
+			(window as any).THREE = THREE; // Make THREE available globally
+
+			// Dynamic import of the renderer
+			const { createWebGLRenderer } = await import("./renderer-webgl");
+
 			window.renderWebGL = createWebGLRenderer(engine, canvas).init();
 			window.renderWebGL.run();
 			window.render2D = null;

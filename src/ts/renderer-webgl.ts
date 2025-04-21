@@ -8,8 +8,13 @@
  * 2D physics and 3D visualization.
  */
 
+import * as Matter from "matter-js";
+import * as THREE from "three";
 import Constants from "./constants";
 import type { RendererWebGLInstance, RendererWebGLConfig } from "./types";
+
+// Add Three.js to window for legacy compatibility
+(window as any).THREE = THREE;
 
 /**
  * Create a WebGL renderer using Three.js
