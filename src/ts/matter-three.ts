@@ -7,7 +7,26 @@
  */
 
 import * as Matter from "matter-js";
-import * as THREE from "three";
+
+// Import only the specific Three.js components we need
+import {
+  Scene,
+  WebGLRenderer,
+  OrthographicCamera,
+  AmbientLight,
+  DirectionalLight,
+  PlaneGeometry,
+  MeshBasicMaterial,
+  MeshLambertMaterial,
+  CircleGeometry,
+  ShapeGeometry,
+  Mesh,
+  Shape,
+  Color,
+  PCFSoftShadowMap,
+  Material
+} from 'three';
+
 import Constants from "./constants";
 import type { MatterThreeInstance } from "./types";
 
@@ -37,10 +56,10 @@ export function MatterThree(options: {
 		background: options.background || Constants.COLORS.BACKGROUND,
 		wireframeBackground: options.wireframeBackground || false,
 		hasShadows: options.hasShadows !== undefined ? options.hasShadows : true,
-		scene: new THREE.Scene(),
-		renderer: new THREE.WebGLRenderer(),
-		camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000),
-		bodies: new Map<number, THREE.Mesh>(),
+		scene: new Scene(),
+		renderer: new WebGLRenderer(),
+		camera: new OrthographicCamera(-1, 1, 1, -1, 0.1, 1000),
+		bodies: new Map<number, Mesh>(),
 		frameRequestId: undefined,
 
 		/**
@@ -48,28 +67,28 @@ export function MatterThree(options: {
 		 * Generates 3D representation for physics bodies
 		 *
 		 * @param {Matter.Body} body - The physics body
-		 * @returns {THREE.Mesh} - The 3D mesh
+		 * @returns {Mesh} - The 3D mesh
 		 */
-		createBodyMesh: function (body: Matter.Body): THREE.Mesh {
+		createBodyMesh: function (body: Matter.Body): Mesh {
 			// Default material
-			const material = new THREE.MeshLambertMaterial({
+			const material = new MeshLambertMaterial({
 				color:
 					body.render && body.render.fillStyle
-						? new THREE.Color(body.render.fillStyle)
-						: new THREE.Color(Constants.COLORS.DEFAULT_OBJECT),
+						? new Color(body.render.fillStyle)
+						: new Color(Constants.COLORS.DEFAULT_OBJECT),
 				wireframe: false,
 			});
 
-			let mesh: THREE.Mesh;
+			let mesh: Mesh;
 
 			// Create appropriate geometry based on body type
 			if (body.circleRadius) {
 				// Circle/sphere geometry
-				const geometry = new THREE.CircleGeometry(body.circleRadius, 24);
-				mesh = new THREE.Mesh(geometry, material);
+				const geometry = new CircleGeometry(body.circleRadius, 24);
+				mesh = new Mesh(geometry, material);
 			} else {
 				// Polygon geometry from vertices
-				const shape = new THREE.Shape();
+				const shape = new Shape();
 
 				if (body.vertices && body.vertices.length > 0) {
 					const firstVertex = Matter.Vector.sub(
@@ -95,8 +114,8 @@ export function MatterThree(options: {
 				}
 
 				// Create flat geometry from shape
-				const geometry = new THREE.ShapeGeometry(shape);
-				mesh = new THREE.Mesh(geometry, material);
+				const geometry = new ShapeGeometry(shape);
+				mesh = new Mesh(geometry, material);
 			}
 
 			// Configure shadows
@@ -138,7 +157,7 @@ export function MatterThree(options: {
 				if (!currentBodyIds.has(id)) {
 					this.scene.remove(mesh);
 					if (mesh.geometry) mesh.geometry.dispose();
-					if (mesh.material instanceof THREE.Material) {
+					if (mesh.material instanceof Material) {
 						mesh.material.dispose();
 					} else if (Array.isArray(mesh.material)) {
 						mesh.material.forEach((material) => material.dispose());
@@ -193,30 +212,30 @@ export function MatterThree(options: {
 		instance.canvas.height = instance.height;
 
 		// Initialize Three.js renderer
-		instance.renderer = new THREE.WebGLRenderer({
+		instance.renderer = new WebGLRenderer({
 			canvas: instance.canvas,
 			antialias: true,
 			alpha: true,
 		});
 
 		instance.renderer.setSize(instance.width, instance.height);
-		instance.renderer.setClearColor(new THREE.Color(instance.background), 1);
+		instance.renderer.setClearColor(new Color(instance.background), 1);
 
 		// Set up shadows
 		if (instance.hasShadows) {
 			instance.renderer.shadowMap.enabled = true;
-			instance.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			instance.renderer.shadowMap.type = PCFSoftShadowMap;
 		}
 
 		// Initialize camera
 		const halfWidth = instance.width / 2;
 		const halfHeight = instance.height / 2;
 
-		instance.camera = new THREE.OrthographicCamera(
+		instance.camera = new OrthographicCamera(
 			-halfWidth,
 			halfWidth,
 			halfHeight,
-			-halfHeight,
+			- halfHeight,
 			1,
 			1000
 		);
@@ -224,10 +243,10 @@ export function MatterThree(options: {
 		instance.camera.position.z = 500;
 
 		// Initialize scene lighting
-		const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+		const ambientLight = new AmbientLight(0xffffff, 0.5);
 		instance.scene.add(ambientLight);
 
-		const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+		const directionalLight = new DirectionalLight(0xffffff, 0.8);
 		directionalLight.position.set(instance.width / 2, instance.height / 2, 100);
 
 		if (instance.hasShadows) {
@@ -246,19 +265,19 @@ export function MatterThree(options: {
 
 		// Add wireframe ground plane if enabled
 		if (instance.wireframeBackground) {
-			const planeGeometry = new THREE.PlaneGeometry(
+			const planeGeometry = new PlaneGeometry(
 				instance.width,
 				instance.height,
 				12,
 				12
 			);
 
-			const planeMaterial = new THREE.MeshBasicMaterial({
+			const planeMaterial = new MeshBasicMaterial({
 				color: 0xcccccc,
 				wireframe: true,
 			});
 
-			const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+			const plane = new Mesh(planeGeometry, planeMaterial);
 			plane.position.z = -5;
 			instance.scene.add(plane);
 		}

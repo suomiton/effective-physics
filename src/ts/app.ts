@@ -144,13 +144,9 @@ async function initializeRenderer(
 	} else if (rendererType === Constants.RENDERER.WEBGL) {
 		// Initialize WebGL renderer - lazy load Three.js and the renderer
 		try {
-			// Dynamically import Three.js and the WebGL renderer
-			const THREE = await import("three");
-			(window as any).THREE = THREE; // Make THREE available globally
-
-			// Dynamic import of the renderer
-			const { createWebGLRenderer } = await import("./renderer-webgl");
-
+			 // Dynamic import of the renderer
+			const { createWebGLRenderer } = await import('./renderer-webgl');
+			
 			window.renderWebGL = createWebGLRenderer(engine, canvas).init();
 			window.renderWebGL.run();
 			window.render2D = null;

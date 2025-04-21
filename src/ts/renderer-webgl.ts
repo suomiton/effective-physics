@@ -9,9 +9,51 @@
  */
 
 import * as Matter from "matter-js";
-import * as THREE from "three";
+
+// Import only the specific Three.js components we need
+import { 
+  Scene, 
+  WebGLRenderer, 
+  OrthographicCamera, 
+  PerspectiveCamera,
+  AmbientLight, 
+  DirectionalLight, 
+  GridHelper,
+  Vector2, 
+  Color, 
+  Mesh, 
+  Shape, 
+  CircleGeometry,
+  ExtrudeGeometry,
+  MeshPhongMaterial,
+  DoubleSide,
+  PCFSoftShadowMap,
+  Material
+} from 'three';
+
 import Constants from "./constants";
 import type { RendererWebGLInstance, RendererWebGLConfig } from "./types";
+
+// Add Three.js imports to a THREE namespace for backward compatibility
+const THREE = {
+  Scene,
+  WebGLRenderer,
+  OrthographicCamera,
+  PerspectiveCamera,
+  AmbientLight,
+  DirectionalLight,
+  GridHelper,
+  Vector2,
+  Color,
+  Mesh,
+  Shape,
+  CircleGeometry,
+  ExtrudeGeometry,
+  MeshPhongMaterial,
+  DoubleSide,
+  PCFSoftShadowMap,
+  Material
+};
 
 // Add Three.js to window for legacy compatibility
 (window as any).THREE = THREE;
@@ -48,11 +90,11 @@ export function createWebGLRenderer(
 	const rendererInstance: RendererWebGLInstance = {
 		engine,
 		canvas,
-		scene: new THREE.Scene(),
-		camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000),
-		webglRenderer: new THREE.WebGLRenderer({ canvas, antialias: true }),
+		scene: new Scene(),
+		camera: new OrthographicCamera(-1, 1, 1, -1, 0.1, 1000),
+		webglRenderer: new WebGLRenderer({ canvas, antialias: true }),
 		bodies: new Map(),
-		mousePosition: new THREE.Vector2(),
+		mousePosition: new Vector2(),
 		config,
 		frameRequestId: undefined,
 
@@ -67,7 +109,7 @@ export function createWebGLRenderer(
 			this.webglRenderer.setSize(canvas.width, canvas.height);
 			this.webglRenderer.setClearColor(this.parseColor(this.config.background));
 			this.webglRenderer.shadowMap.enabled = this.config.hasShadows;
-			this.webglRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			this.webglRenderer.shadowMap.type = PCFSoftShadowMap;
 
 			// Set up scene components
 			this._setupCamera();
@@ -142,7 +184,7 @@ export function createWebGLRenderer(
 				if (!currentBodyIds.has(id)) {
 					this.scene.remove(mesh);
 					if (mesh.geometry) mesh.geometry.dispose();
-					if (mesh.material instanceof THREE.Material) {
+					if (mesh.material instanceof Material) {
 						mesh.material.dispose();
 					} else if (Array.isArray(mesh.material)) {
 						mesh.material.forEach((material) => material.dispose());
@@ -165,7 +207,7 @@ export function createWebGLRenderer(
 				// Orthographic camera for 2D-like view
 				const height = canvas.height;
 				const width = canvas.width;
-				this.camera = new THREE.OrthographicCamera(
+				this.camera = new OrthographicCamera(
 					-width / 2,
 					width / 2,
 					height / 2,
@@ -175,7 +217,7 @@ export function createWebGLRenderer(
 				);
 			} else {
 				// Perspective camera for 3D view
-				this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+				this.camera = new PerspectiveCamera(75, aspect, 0.1, 1000);
 			}
 
 			// Position camera to view the scene
@@ -191,11 +233,11 @@ export function createWebGLRenderer(
 		 */
 		_setupLights: function (): void {
 			// Ambient light for general illumination
-			const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+			const ambientLight = new AmbientLight(0xffffff, 0.6);
 			this.scene.add(ambientLight);
 
 			// Directional light with shadows
-			const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+			const directionalLight = new DirectionalLight(0xffffff, 0.8);
 			directionalLight.position.set(0, 0, 200);
 			directionalLight.castShadow = this.config.hasShadows;
 
@@ -222,7 +264,7 @@ export function createWebGLRenderer(
 		 */
 		_setupGrid: function (): void {
 			// Create grid to match canvas dimensions
-			const gridHelper = new THREE.GridHelper(
+			const gridHelper = new GridHelper(
 				Math.max(canvas.width, canvas.height),
 				10,
 				0x888888,
@@ -247,7 +289,7 @@ export function createWebGLRenderer(
 			this.bodies.forEach((mesh) => {
 				this.scene.remove(mesh);
 				if (mesh.geometry) mesh.geometry.dispose();
-				if (mesh.material instanceof THREE.Material) {
+				if (mesh.material instanceof Material) {
 					mesh.material.dispose();
 				} else if (Array.isArray(mesh.material)) {
 					mesh.material.forEach((material) => material.dispose());
@@ -268,16 +310,16 @@ export function createWebGLRenderer(
 		 * Handles different color format inputs
 		 *
 		 * @param {string} [colorString] - The color string to parse
-		 * @returns {THREE.Color} - The resulting Three.js color object
+		 * @returns {Color} - The resulting Three.js color object
 		 */
-		parseColor: function (colorString?: string): THREE.Color {
-			if (!colorString) return new THREE.Color(this.config.defaultObjectColor);
+		parseColor: function (colorString?: string): Color {
+			if (!colorString) return new Color(this.config.defaultObjectColor);
 
 			try {
-				return new THREE.Color(colorString);
+				return new Color(colorString);
 			} catch (e) {
 				console.warn("Invalid color format, using default:", e);
-				return new THREE.Color(this.config.defaultObjectColor);
+				return new Color(this.config.defaultObjectColor);
 			}
 		},
 
@@ -286,25 +328,25 @@ export function createWebGLRenderer(
 		 * Generates appropriate geometry based on body type
 		 *
 		 * @param {Matter.Body} body - The physics body
-		 * @returns {THREE.Mesh|undefined} - The created mesh or undefined if unsupported
+		 * @returns {Mesh|undefined} - The created mesh or undefined if unsupported
 		 */
-		createMeshForBody: function (body: Matter.Body): THREE.Mesh | undefined {
+		createMeshForBody: function (body: Matter.Body): Mesh | undefined {
 			// Materials with shadows
-			const material = new THREE.MeshPhongMaterial({
+			const material = new MeshPhongMaterial({
 				color: this.parseColor(body.render?.fillStyle),
-				side: THREE.DoubleSide,
+				side: DoubleSide,
 			});
 
 			// Different geometries for different body types
-			let mesh: THREE.Mesh | undefined;
+			let mesh: Mesh | undefined;
 
 			if (body.circleRadius) {
 				// Circle/sphere body
-				const geometry = new THREE.CircleGeometry(body.circleRadius, 32);
-				mesh = new THREE.Mesh(geometry, material);
+				const geometry = new CircleGeometry(body.circleRadius, 32);
+				mesh = new Mesh(geometry, material);
 			} else if (body.vertices && body.vertices.length > 2) {
 				// Polygon body using shape extruded to give it depth
-				const shape = new THREE.Shape();
+				const shape = new Shape();
 
 				// Create shape from vertices
 				body.vertices.forEach((vertex, i) => {
@@ -323,8 +365,8 @@ export function createWebGLRenderer(
 					bevelEnabled: false,
 				};
 
-				const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-				mesh = new THREE.Mesh(geometry, material);
+				const geometry = new ExtrudeGeometry(shape, extrudeSettings);
+				mesh = new Mesh(geometry, material);
 				mesh.rotation.x = Math.PI / 2; // Rotate to face camera
 				mesh.position.z = -1; // Offset to ensure visibility
 			}
