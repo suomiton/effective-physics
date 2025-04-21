@@ -189,12 +189,17 @@ export const PhysicsUtils = {
 		const sandColors = Constants.SAND.COLORS;
 		const clusterCenter = { x: canvas.width / 2, y: 100 };
 		const clusterRadius = 80;
-		const positions: Array<{ x: number; y: number }> = [];
+		const positions: Array<{ x: number; y: number; radius: number }> = [];
 		const maxAttempts = 300;
-		const particleRadius = Constants.SAND.GRAIN_SIZE;
 		const particleCount = 500;
 
 		for (let i = 0; i < particleCount; i++) {
+			// Generate random size between min and max
+			const particleRadius =
+				Constants.SAND.GRAIN_SIZE_MIN +
+				Math.random() *
+					(Constants.SAND.GRAIN_SIZE_MAX - Constants.SAND.GRAIN_SIZE_MIN);
+
 			let validPos = this._findValidSandPosition(
 				positions,
 				clusterCenter,
@@ -205,15 +210,21 @@ export const PhysicsUtils = {
 
 			if (!validPos) continue;
 
+			// Calculate mass and friction based on size
+			// Larger particles have more mass and less air friction
+			const sizeFactor = particleRadius / Constants.SAND.GRAIN_SIZE_MAX;
+			const mass = 0.01 + sizeFactor * 0.04; // Mass between 0.01 and 0.05
+			const frictionAir = 0.02 - sizeFactor * 0.01; // Air friction between 0.02 and 0.01
+
 			const particle = Matter.Bodies.circle(
 				validPos.x,
 				validPos.y,
 				particleRadius,
 				{
-					mass: 0.01,
+					mass: mass,
 					restitution: 0.0,
 					friction: 0.1,
-					frictionAir: 0.01,
+					frictionAir: frictionAir,
 					render: {
 						fillStyle:
 							sandColors[Math.floor(Math.random() * sandColors.length)],
@@ -230,15 +241,15 @@ export const PhysicsUtils = {
 	 * Ensures new particles don't overlap with existing ones using a collision detection algorithm
 	 *
 	 * @private
-	 * @param {Array} positions - Array of existing particle positions
+	 * @param {Array} positions - Array of existing particle positions with their radii
 	 * @param {Object} center - Center point of the cluster {x, y}
 	 * @param {number} radius - Radius of the particle cluster
-	 * @param {number} particleRadius - Radius of each particle
+	 * @param {number} particleRadius - Radius of the new particle
 	 * @param {number} maxAttempts - Maximum attempts to find a valid position
 	 * @returns {Object|null} - Valid position {x, y} or null if none found
 	 */
 	_findValidSandPosition: function (
-		positions: Array<{ x: number; y: number }>,
+		positions: Array<{ x: number; y: number; radius?: number }>,
 		center: { x: number; y: number },
 		radius: number,
 		particleRadius: number,
@@ -254,14 +265,16 @@ export const PhysicsUtils = {
 			for (const p of positions) {
 				const dx = xPos - p.x;
 				const dy = yPos - p.y;
-				if (Math.sqrt(dx * dx + dy * dy) < particleRadius * 2) {
+				// Use the sum of both radii to determine minimum distance
+				const minDistance = particleRadius + (p.radius || particleRadius);
+				if (Math.sqrt(dx * dx + dy * dy) < minDistance) {
 					tooClose = true;
 					break;
 				}
 			}
 
 			if (!tooClose) {
-				const validPos = { x: xPos, y: yPos };
+				const validPos = { x: xPos, y: yPos, radius: particleRadius };
 				positions.push(validPos);
 				return validPos;
 			}

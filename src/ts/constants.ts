@@ -39,7 +39,8 @@ const Constants = {
 
 	// Sand configuration
 	SAND: {
-		GRAIN_SIZE: 2,
+		GRAIN_SIZE_MIN: 0.5,
+		GRAIN_SIZE_MAX: 2,
 		COLORS: ["#E6C288", "#D4B16A", "#C19A53", "#B3894D", "#F0D6A7"],
 	},
 
