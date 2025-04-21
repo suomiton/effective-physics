@@ -16,7 +16,7 @@
 		"sand",
 		"particles"
 	],
-	"author": "Your Name",
+	"author": "Toni Suominen",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/matter-js": "^0.19.8",
