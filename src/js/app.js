@@ -33,7 +33,7 @@ Matter.Runner.run(runner, engine);
 
 // Create game objects
 const boundaries = PhysicsUtils.createBoundaries(canvas, world);
-const block = PhysicsUtils.createBlock(world, 300, 400, 50, 50);
+const block = PhysicsUtils.createBlock(world, 300, 400, Constants.BLOCK.SIZE, Constants.BLOCK.SIZE);
 
 // Set up mouse interactions for dragging
 CanvasManager.setupMouseEvents(canvas, block, engine);

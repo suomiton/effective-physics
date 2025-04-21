@@ -91,8 +91,14 @@ const MatterThree = {
 			// Different shape handling
 			if (body.label === 'Circle Body') {
 				geometry = new THREE.CircleGeometry(body.circleRadius, 32);
+				// Use the appropriate sand color if the particle is small (sand grain)
+				let color = body.render.fillStyle || Constants.COLORS.DEFAULT_OBJECT;
+				if (body.circleRadius <= Constants.SAND.GRAIN_SIZE) {
+					// Use one of the sand colors if it's a sand particle
+					color = body.render.fillStyle || Constants.SAND.COLORS[0];
+				}
 				material = new THREE.MeshStandardMaterial({
-					color: body.render.fillStyle || Constants.COLORS.DEFAULT_OBJECT,
+					color: color,
 					side: THREE.DoubleSide
 				});
 				mesh = new THREE.Mesh(geometry, material);
@@ -114,8 +120,18 @@ const MatterThree = {
 					geometry = new THREE.ShapeGeometry(shape);
 				}
 
+				// Check if this is likely our main block by size
+				let color = body.render.fillStyle || Constants.COLORS.DEFAULT_OBJECT;
+				if (body.vertices.length === 4) {
+					const width = Math.abs(body.bounds.max.x - body.bounds.min.x);
+					const height = Math.abs(body.bounds.max.y - body.bounds.min.y);
+					if (Math.abs(width - Constants.BLOCK.SIZE) < 1 && Math.abs(height - Constants.BLOCK.SIZE) < 1) {
+						color = Constants.BLOCK.COLOR;
+					}
+				}
+
 				material = new THREE.MeshStandardMaterial({
-					color: body.render.fillStyle || Constants.COLORS.DEFAULT_OBJECT,
+					color: color,
 					side: THREE.DoubleSide
 				});
 				mesh = new THREE.Mesh(geometry, material);

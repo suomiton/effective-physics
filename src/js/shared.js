@@ -74,12 +74,12 @@ const PhysicsUtils = {
 	 * @param {number} height - Block height
 	 * @returns {Matter.Body} - The created block body
 	 */
-	createBlock: function (world, x, y, width, height) {
+	createBlock: function (world, x, y, width = Constants.BLOCK.SIZE, height = Constants.BLOCK.SIZE) {
 		const block = Matter.Bodies.rectangle(x, y, width, height, {
 			mass: 10,
 			frictionAir: 0.0,
 			restitution: 0,
-			render: { fillStyle: Constants.COLORS.BLOCK }
+			render: { fillStyle: Constants.BLOCK.COLOR }
 		});
 
 		Matter.World.add(world, block);
@@ -94,12 +94,12 @@ const PhysicsUtils = {
 	 * @param {Matter.World} world - The Matter.js world
 	 */
 	dropSand: function (canvas, world) {
-		const sandColors = Constants.COLORS.SAND;
+		const sandColors = Constants.SAND.COLORS;
 		const clusterCenter = { x: canvas.width / 2, y: 100 };
 		const clusterRadius = 80;
 		const positions = [];
 		const maxAttempts = 300;
-		const particleRadius = 2;
+		const particleRadius = Constants.SAND.GRAIN_SIZE;
 		const particleCount = 500;
 
 		for (let i = 0; i < particleCount; i++) {

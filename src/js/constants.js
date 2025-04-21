@@ -16,11 +16,12 @@
  * @property {Object} PHYSICS - Physics engine settings
  * @property {number} PHYSICS.GRAVITY - Gravity strength for the simulation
  * @property {boolean} PHYSICS.SLEEP_ENABLED - Whether bodies can sleep when inactive
- * @property {Object} COLORS - Color definitions for various elements
- * @property {string} COLORS.BACKGROUND - Background color of the canvas
- * @property {string} COLORS.BLOCK - Color for the main interactive block
- * @property {number} COLORS.DEFAULT_OBJECT - Default color for 3D objects (hexadecimal)
- * @property {string[]} COLORS.SAND - Array of colors for sand particles
+ * @property {Object} BLOCK - Block object configuration
+ * @property {number} BLOCK.SIZE - Default size (width/height) of the interactive block in pixels
+ * @property {string} BLOCK.COLOR - Default color of the interactive block
+ * @property {Object} SAND - Sand particles configuration
+ * @property {number} SAND.GRAIN_SIZE - Size of each sand grain particle in pixels
+ * @property {string[]} SAND.COLORS - Array of possible colors for sand particles
  * @property {Object} RENDERER - Renderer type definitions
  * @property {string} RENDERER.WEBGL - Identifier for WebGL renderer
  * @property {string} RENDERER.CANVAS_2D - Identifier for Canvas 2D renderer
@@ -41,9 +42,19 @@ const Constants = {
 	// Colors
 	COLORS: {
 		BACKGROUND: '#ffffff',
-		BLOCK: 'blue',
 		DEFAULT_OBJECT: 0x4444ff,
-		SAND: [
+	},
+
+	// Block configuration
+	BLOCK: {
+		SIZE: 50,
+		COLOR: '#4444ff'
+	},
+
+	// Sand configuration
+	SAND: {
+		GRAIN_SIZE: 2,
+		COLORS: [
 			'#E6C288',
 			'#D4B16A',
 			'#C19A53',
