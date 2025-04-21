@@ -39,8 +39,17 @@ const block = PhysicsUtils.createBlock(world, 300, 400, 50, 50);
 // Set up mouse interactions for dragging
 CanvasManager.setupMouseEvents(canvas, block, engine);
 
-// Initialize the default renderer (WebGL)
-initializeRenderer('webgl');
+// Read renderer preference from URL query parameter
+function getPreferredRenderer() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const renderer = urlParams.get('renderer');
+
+	// Return the renderer from query param if valid, otherwise default to 'webgl'
+	return (renderer === '2d' || renderer === 'webgl') ? renderer : 'webgl';
+}
+
+// Initialize the renderer based on URL query parameter
+initializeRenderer(getPreferredRenderer());
 
 // Set up renderer switching UI
 const renderEngineSelect = document.getElementById('renderEngineSelect');

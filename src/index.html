@@ -29,6 +29,26 @@
 	<script src="js/renderer-2d.js"></script>
 	<script src="js/renderer-webgl.js"></script>
 	<script src="js/app.js"></script>
+
+	<!-- Script to handle renderer selection via query parameter -->
+	<script>
+		// Initialize the select dropdown based on the current query parameter
+		document.addEventListener('DOMContentLoaded', () => {
+			const urlParams = new URLSearchParams(window.location.search);
+			const renderer = urlParams.get('renderer');
+			const select = document.getElementById('renderEngineSelect');
+
+			if (renderer && (renderer === '2d' || renderer === 'webgl')) {
+				select.value = renderer;
+			}
+
+			// Change renderer by refreshing the page with a new query parameter
+			select.addEventListener('change', () => {
+				const newRenderer = select.value;
+				window.location.href = window.location.pathname + '?renderer=' + newRenderer;
+			});
+		});
+	</script>
 </body>
 
 </html>
