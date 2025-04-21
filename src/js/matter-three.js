@@ -1,7 +1,33 @@
 /**
- * A simple Matter-THREE integration for rendering Matter.js using Three.js
+ * matter-three.js
+ * 
+ * Purpose: Integrates Matter.js physics with Three.js 3D rendering.
+ * This module provides a bridge between the Matter.js physics engine and Three.js,
+ * enabling 3D visualization of 2D physics simulations. It handles the creation
+ * of Three.js objects corresponding to Matter.js bodies, manages the scene, and
+ * updates the rendering with physics data.
+ */
+
+/**
+ * Integration module for Matter.js and Three.js
+ * @namespace
  */
 const MatterThree = {
+	/**
+	 * Create a new Matter-THREE integration instance
+	 * Sets up a Three.js scene to render Matter.js bodies with 3D visuals
+	 * 
+	 * @param {Object} options - Configuration options
+	 * @param {Matter.Engine} options.engine - The Matter.js physics engine
+	 * @param {HTMLElement} [options.element=document.body] - The DOM element to append the renderer to
+	 * @param {HTMLCanvasElement} [options.canvas] - Canvas element to use for rendering
+	 * @param {number} [options.width=Constants.CANVAS.WIDTH] - Width of the rendering canvas
+	 * @param {number} [options.height=Constants.CANVAS.HEIGHT] - Height of the rendering canvas
+	 * @param {string|number} [options.background=Constants.COLORS.BACKGROUND] - Background color
+	 * @param {boolean} [options.wireframeBackground=false] - Whether to render a wireframe background
+	 * @param {boolean} [options.hasShadows=true] - Whether to enable shadows in the scene
+	 * @returns {Object} - The renderer instance
+	 */
 	create: function (options) {
 		const defaults = {
 			engine: null,
@@ -52,7 +78,13 @@ const MatterThree = {
 		// Map to store Three.js objects corresponding to Matter.js bodies
 		render.bodies = new Map();
 
-		// Helper method to create a Three.js mesh for a Matter.js body
+		/**
+		 * Create a Three.js mesh for a Matter.js body
+		 * Generates an appropriate geometry and material based on the body's shape
+		 * 
+		 * @param {Matter.Body} body - The physics body to create a mesh for
+		 * @returns {THREE.Mesh} - The created mesh
+		 */
 		render.createBodyMesh = function (body) {
 			let geometry, material, mesh;
 
@@ -94,7 +126,10 @@ const MatterThree = {
 			return mesh;
 		};
 
-		// Method to update the Three.js scene from the Matter.js world
+		/**
+		 * Update the Three.js scene from the Matter.js world
+		 * Creates, updates, or removes Three.js meshes based on physics bodies
+		 */
 		render.updateScene = function () {
 			const bodies = Matter.Composite.allBodies(render.engine.world);
 
@@ -127,13 +162,19 @@ const MatterThree = {
 			render.renderer.render(render.scene, render.camera);
 		};
 
-		// Run function that updates the Three.js scene
+		/**
+		 * Run the renderer
+		 * Starts the animation loop that updates the Three.js scene
+		 */
 		render.run = function () {
 			render.updateScene();
 			render.frameRequestId = requestAnimationFrame(render.run);
 		};
 
-		// Stop function to cancel animation frame
+		/**
+		 * Stop the renderer
+		 * Cancels the animation frame to stop rendering
+		 */
 		render.stop = function () {
 			if (render.frameRequestId) {
 				cancelAnimationFrame(render.frameRequestId);

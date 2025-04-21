@@ -1,5 +1,10 @@
 /**
- * WebGL renderer module using Three.js
+ * renderer-webgl.js
+ * 
+ * Purpose: Provides WebGL-based 3D rendering for the physics simulation using Three.js.
+ * This module handles the creation and management of a WebGL renderer that visualizes
+ * Matter.js physics objects in 3D using Three.js. It supports both orthographic and
+ * perspective cameras, shadow casting, and provides methods for object creation and scene management.
  */
 
 // Default renderer config
@@ -10,9 +15,15 @@ const WEBGL_DEFAULTS = {
 	usesOrthographicCamera: true
 };
 
+/**
+ * WebGL renderer module using Three.js
+ * @namespace
+ */
 const RendererWebGL = {
 	/**
 	 * Create a new WebGL renderer
+	 * Sets up a THREE.js scene to visualize Matter.js physics bodies
+	 * 
 	 * @param {Matter.Engine} engine - The Matter.js engine
 	 * @param {HTMLCanvasElement} canvas - The canvas element
 	 * @param {Object} options - Optional renderer configuration
@@ -34,6 +45,12 @@ const RendererWebGL = {
 				mousePosition: new THREE.Vector2(),
 				config: Object.assign({}, WEBGL_DEFAULTS, options),
 
+				/**
+				 * Initialize the WebGL renderer
+				 * Sets up the renderer, camera, lights, and grid
+				 * 
+				 * @returns {Object} - The initialized renderer for chaining
+				 */
 				init: function () {
 					// Set up WebGL renderer
 					this.webglRenderer = new THREE.WebGLRenderer({
@@ -57,6 +74,11 @@ const RendererWebGL = {
 					return this;
 				},
 
+				/**
+				 * Set up the appropriate camera based on configuration
+				 * Creates either an orthographic or perspective camera
+				 * @private
+				 */
 				_setupCamera: function () {
 					if (this.config.usesOrthographicCamera) {
 						// Orthographic camera to match 2D coordinates exactly
@@ -80,6 +102,11 @@ const RendererWebGL = {
 					this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 				},
 
+				/**
+				 * Set up scene lighting
+				 * Creates ambient and directional lights with optional shadows
+				 * @private
+				 */
 				_setupLights: function () {
 					// Add ambient light
 					const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -98,6 +125,11 @@ const RendererWebGL = {
 					}
 				},
 
+				/**
+				 * Set up grid and ground plane for visual reference
+				 * Creates a reference grid and plane to help with spatial orientation
+				 * @private
+				 */
 				_setupGrid: function () {
 					// Create a simple ground plane for reference
 					const groundGeometry = new THREE.PlaneGeometry(this.canvas.width, this.canvas.height);
@@ -123,11 +155,19 @@ const RendererWebGL = {
 					}
 				},
 
+				/**
+				 * Start the rendering loop
+				 * Continuously updates the scene based on physics engine state
+				 */
 				run: function () {
 					this.frameRequestId = requestAnimationFrame(this.run.bind(this));
 					this.updateScene();
 				},
 
+				/**
+				 * Stop the rendering loop
+				 * Cancels the animation frame and cleans up resources
+				 */
 				stop: function () {
 					if (this.frameRequestId) {
 						cancelAnimationFrame(this.frameRequestId);
@@ -136,6 +176,11 @@ const RendererWebGL = {
 					this._disposeObjects();
 				},
 
+				/**
+				 * Clean up THREE.js objects to prevent memory leaks
+				 * Disposes geometries and materials, and removes objects from the scene
+				 * @private
+				 */
 				_disposeObjects: function () {
 					this.bodies.forEach((mesh) => {
 						if (mesh.geometry) mesh.geometry.dispose();
@@ -145,7 +190,13 @@ const RendererWebGL = {
 					this.bodies.clear();
 				},
 
-				// Convert color string to THREE.js color
+				/**
+				 * Convert a color string to THREE.js color
+				 * Handles string color formats and provides fallback to default color
+				 * 
+				 * @param {string} colorString - The color string to parse
+				 * @returns {THREE.Color} - The parsed THREE.js color
+				 */
 				parseColor: function (colorString) {
 					try {
 						return new THREE.Color(colorString || this.config.defaultObjectColor);
@@ -155,6 +206,13 @@ const RendererWebGL = {
 					}
 				},
 
+				/**
+				 * Create a THREE.js mesh for a Matter.js body
+				 * Generates appropriate geometry and material based on body type
+				 * 
+				 * @param {Matter.Body} body - The physics body to create a mesh for
+				 * @returns {THREE.Mesh|null} - The created mesh or null if creation failed
+				 */
 				createMeshForBody: function (body) {
 					let geometry, material, mesh;
 
@@ -202,6 +260,10 @@ const RendererWebGL = {
 					}
 				},
 
+				/**
+				 * Update the scene based on physics engine state
+				 * Creates, updates, or removes THREE.js meshes based on Matter.js bodies
+				 */
 				updateScene: function () {
 					try {
 						const bodies = Matter.Composite.allBodies(this.engine.world);
@@ -255,7 +317,14 @@ const RendererWebGL = {
 					}
 				},
 
-				// Convert coordinates to Matter.js world coordinates
+				/**
+				 * Convert mouse coordinates to Matter.js world coordinates
+				 * Translates browser event coordinates to simulation coordinates
+				 * 
+				 * @param {number} clientX - The client X coordinate
+				 * @param {number} clientY - The client Y coordinate
+				 * @returns {Object} - The translated coordinates {x, y}
+				 */
 				getMouseCoordinates: function (clientX, clientY) {
 					try {
 						const rect = this.canvas.getBoundingClientRect();
@@ -278,6 +347,9 @@ const RendererWebGL = {
 
 	/**
 	 * Start the renderer
+	 * Begins the rendering loop for the WebGL renderer
+	 * 
+	 * @param {Object} renderer - The WebGL renderer instance
 	 */
 	start: function (renderer) {
 		renderer.run();
@@ -286,6 +358,9 @@ const RendererWebGL = {
 
 	/**
 	 * Stop the renderer
+	 * Halts the rendering loop and cleans up resources
+	 * 
+	 * @param {Object} renderer - The WebGL renderer instance
 	 */
 	stop: function (renderer) {
 		if (renderer) {

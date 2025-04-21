@@ -1,9 +1,21 @@
 /**
+ * shared.js
+ * 
+ * Purpose: Provides shared physics utility functions across the application.
+ * This module contains reusable physics-related functionality including
+ * boundary creation, block creation, sand particle generation, and
+ * other common physics operations used throughout the simulation.
+ */
+
+/**
  * Shared utility functions for physics objects
+ * @namespace
  */
 const PhysicsUtils = {
 	/**
 	 * Create boundary walls around the canvas
+	 * Creates static bodies for floor, ceiling, and side walls to contain physics objects
+	 * 
 	 * @param {HTMLCanvasElement} canvas - The canvas element
 	 * @param {Matter.World} world - The Matter.js world
 	 * @returns {Object} - References to the boundary bodies
@@ -53,6 +65,8 @@ const PhysicsUtils = {
 
 	/**
 	 * Create a physics block
+	 * Creates a rectangular body with specified dimensions and physics properties
+	 * 
 	 * @param {Matter.World} world - The Matter.js world
 	 * @param {number} x - X position
 	 * @param {number} y - Y position
@@ -74,6 +88,8 @@ const PhysicsUtils = {
 
 	/**
 	 * Create sand particles in a cluster
+	 * Generates a cluster of small circular bodies with sand-like properties
+	 * 
 	 * @param {HTMLCanvasElement} canvas - The canvas element
 	 * @param {Matter.World} world - The Matter.js world
 	 */
@@ -107,7 +123,15 @@ const PhysicsUtils = {
 
 	/**
 	 * Helper function to find a valid position for a sand particle
+	 * Ensures new particles don't overlap with existing ones using a collision detection algorithm
+	 * 
 	 * @private
+	 * @param {Array} positions - Array of existing particle positions
+	 * @param {Object} center - Center point of the cluster {x, y}
+	 * @param {number} radius - Radius of the particle cluster
+	 * @param {number} particleRadius - Radius of each particle
+	 * @param {number} maxAttempts - Maximum attempts to find a valid position
+	 * @returns {Object|null} - Valid position {x, y} or null if none found
 	 */
 	_findValidSandPosition: function (positions, center, radius, particleRadius, maxAttempts) {
 		for (let attempt = 0; attempt < maxAttempts; attempt++) {

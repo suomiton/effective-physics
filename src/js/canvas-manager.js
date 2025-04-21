@@ -1,9 +1,24 @@
 /**
- * Canvas management module for handling canvas creation/destruction
+ * canvas-manager.js
+ * 
+ * Purpose: Manages canvas creation, replacement, and interaction.
+ * This module handles the DOM manipulation for canvas elements,
+ * creates the canvas container, and sets up mouse events for
+ * interactive dragging of physics objects. It serves as a bridge
+ * between the DOM and the physics simulation.
+ */
+
+/**
+ * Canvas management module for handling canvas creation/destruction and mouse interactions
+ * @namespace
  */
 const CanvasManager = {
 	/**
 	 * Initialize the canvas container
+	 * Creates a container div for the canvas and inserts it into the DOM
+	 * 
+	 * @param {HTMLCanvasElement} originalCanvas - The original canvas element
+	 * @returns {Object} - References to the container and canvas
 	 */
 	init: function (originalCanvas) {
 		// Create container for the canvas
@@ -26,6 +41,10 @@ const CanvasManager = {
 
 	/**
 	 * Replace the current canvas with a fresh one
+	 * Removes the old canvas and creates a new one with the same dimensions
+	 * 
+	 * @param {HTMLDivElement} container - The canvas container
+	 * @returns {HTMLCanvasElement} - The newly created canvas
 	 */
 	replaceCanvas: function (container) {
 		// Remove old canvas if it exists
@@ -46,11 +65,25 @@ const CanvasManager = {
 
 	/**
 	 * Set up mouse events for block dragging
+	 * Creates constraint-based dragging for physics objects with renderer-specific
+	 * coordinate handling
+	 * 
+	 * @param {HTMLCanvasElement} canvas - The canvas element
+	 * @param {Matter.Body} block - The physics body to make draggable
+	 * @param {Matter.Engine} engine - The Matter.js engine instance
 	 */
 	setupMouseEvents: function (canvas, block, engine) {
 		let dragConstraint = null;
 		let isDragging = false;
 
+		/**
+		 * Convert mouse position to physics world coordinates
+		 * Handles different coordinate systems between renderers
+		 * 
+		 * @param {MouseEvent} e - The mouse event
+		 * @param {string} currentRenderer - The current renderer type
+		 * @returns {Object} - The mouse position in world coordinates
+		 */
 		const getMousePosition = (e, currentRenderer) => {
 			// Use renderer-specific coordinate conversion if available
 			if (currentRenderer === Constants.RENDERER.WEBGL && window.renderWebGL && window.renderWebGL.getMouseCoordinates) {

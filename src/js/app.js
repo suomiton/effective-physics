@@ -1,14 +1,11 @@
-/* 
-   Matter.js-based simulation.
-
-   Features:
-   - Enclosing static walls (floor, ceiling, sides) so objects stay in view.
-   - A dynamic block with custom hinge-like dragging:
-	 * A constraint is added where you first click the block, allowing rotation.
-	 * On mouseup, the constraint is removed, letting the block keep momentum.
-   - Sand grains with lighter mass, slight bounce, friction, random colors.
-   - All collisions, gravity, and constraints handled by Matter.js.
-*/
+/**
+ * app.js
+ * 
+ * Purpose: Main application entry point that initializes the physics simulation.
+ * This file sets up the Matter.js physics engine, creates the simulation objects,
+ * handles renderer initialization and switching, and manages user interactions.
+ * It serves as the controller that coordinates between physics, rendering, and UI.
+ */
 
 // Get the original canvas
 const originalCanvas = document.getElementById('simulationCanvas');
@@ -43,7 +40,7 @@ CanvasManager.setupMouseEvents(canvas, block, engine);
 
 /**
  * Read renderer preference from URL query parameter
- * @returns {string} - The renderer type to use
+ * @returns {string} - The renderer type to use (webgl or 2d)
  */
 function getPreferredRenderer() {
 	const urlParams = new URLSearchParams(window.location.search);
@@ -62,7 +59,8 @@ initializeRenderer(getPreferredRenderer());
 setupUI();
 
 /**
- * Set up UI event listeners
+ * Set up UI event listeners for renderer switching and sand generation
+ * Connects UI controls to the simulation functionality
  */
 function setupUI() {
 	const renderEngineSelect = document.getElementById('renderEngineSelect');
@@ -86,7 +84,9 @@ function setupUI() {
 
 /**
  * Switch between renderers
- * @param {string} rendererType - The type of renderer to switch to
+ * Handles stopping the current renderer, replacing the canvas, and initializing the new renderer
+ * 
+ * @param {string} rendererType - The type of renderer to switch to (webgl or 2d)
  */
 function switchRenderer(rendererType) {
 	// Stop current renderer
@@ -104,7 +104,9 @@ function switchRenderer(rendererType) {
 
 /**
  * Initialize the specified renderer
- * @param {string} rendererType - The type of renderer to initialize
+ * Creates and starts either the WebGL or 2D renderer with fallback handling
+ * 
+ * @param {string} rendererType - The type of renderer to initialize (webgl or 2d)
  */
 function initializeRenderer(rendererType) {
 	try {
@@ -137,6 +139,7 @@ function initializeRenderer(rendererType) {
 
 /**
  * Stop the current renderer
+ * Cleans up the active renderer to prevent memory leaks and performance issues
  */
 function stopCurrentRenderer() {
 	if (window.currentRenderer === Constants.RENDERER.WEBGL && window.renderWebGL) {
