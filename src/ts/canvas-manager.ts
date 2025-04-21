@@ -10,7 +10,7 @@
 
 import Matter from "matter-js";
 import Constants from "./constants";
-import type { CanvasSetup, MousePosition } from "./types";
+import type { CanvasSetup, InteractiveObject, MousePosition } from "./types";
 
 /**
  * Canvas management module for handling canvas creation/destruction and mouse interactions
@@ -70,17 +70,17 @@ export const CanvasManager = {
 	},
 
 	/**
-	 * Set up mouse events for block dragging
+	 * Set up mouse events for interacting with draggable objects
 	 * Creates constraint-based dragging for physics objects with renderer-specific
 	 * coordinate handling
 	 *
 	 * @param {HTMLCanvasElement} canvas - The canvas element
-	 * @param {Matter.Body} block - The physics body to make draggable
+	 * @param {Map<string, InteractiveObject>} interactiveObjects - Map of interactive objects
 	 * @param {Matter.Engine} engine - The Matter.js engine instance
 	 */
 	setupMouseEvents: function (
 		canvas: HTMLCanvasElement,
-		block: Matter.Body,
+		interactiveObjects: Map<string, InteractiveObject>,
 		engine: Matter.Engine
 	): void {
 		let dragConstraint: Matter.Constraint | null = null;
@@ -115,18 +115,34 @@ export const CanvasManager = {
 			};
 		};
 
+		// Get array of draggable bodies for collision detection
+		const getDraggableBodies = (): Matter.Body[] => {
+			const bodies: Matter.Body[] = [];
+			interactiveObjects.forEach((obj) => {
+				if (obj.config.isDraggable) {
+					bodies.push(obj.body);
+				}
+			});
+			return bodies;
+		};
+
 		canvas.addEventListener("mousedown", (e: MouseEvent) => {
 			const worldPos = getMousePosition(e, window.currentRenderer);
+			const draggableBodies = getDraggableBodies();
 
-			const bodiesAtPoint = Matter.Query.point([block], worldPos);
+			// Check if mouse is over any draggable body
+			const bodiesAtPoint = Matter.Query.point(draggableBodies, worldPos);
 
 			if (bodiesAtPoint.length > 0) {
+				// Get the topmost body (last in array)
+				const bodyToDrag = bodiesAtPoint[bodiesAtPoint.length - 1];
+
 				isDragging = true;
 				dragConstraint = Matter.Constraint.create({
-					bodyA: block,
+					bodyA: bodyToDrag,
 					pointA: {
-						x: worldPos.x - block.position.x,
-						y: worldPos.y - block.position.y,
+						x: worldPos.x - bodyToDrag.position.x,
+						y: worldPos.y - bodyToDrag.position.y,
 					},
 					pointB: worldPos,
 					stiffness: 0.02,

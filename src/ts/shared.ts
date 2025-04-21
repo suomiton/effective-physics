@@ -9,7 +9,11 @@
 
 import Matter from "matter-js";
 import Constants from "./constants";
-import type { Boundaries } from "./types";
+import type {
+	Boundaries,
+	InteractiveObject,
+	InteractiveObjectConfig,
+} from "./types";
 
 /**
  * Shared utility functions for physics objects
@@ -97,6 +101,81 @@ export const PhysicsUtils = {
 
 		Matter.World.add(world, block);
 		return block;
+	},
+
+	/**
+	 * Create an interactive object based on a configuration
+	 * Creates a physics body based on the type and properties specified in the config
+	 *
+	 * @param {Matter.World} world - The Matter.js world
+	 * @param {InteractiveObjectConfig} config - The object configuration
+	 * @returns {InteractiveObject} - The created interactive object with its body
+	 */
+	createInteractiveObject: function (
+		world: Matter.World,
+		config: InteractiveObjectConfig
+	): InteractiveObject {
+		let body: Matter.Body;
+
+		// Common physics properties for the body
+		const options = {
+			mass: config.mass,
+			frictionAir: config.frictionAir,
+			restitution: config.restitution,
+			isStatic: config.isStatic,
+			render: { fillStyle: config.color },
+			label: config.id,
+		};
+
+		// Create a body based on the type specified in the config
+		if (config.type === "rectangle") {
+			if (!config.width || !config.height) {
+				throw new Error("Width and height required for rectangle objects");
+			}
+			body = Matter.Bodies.rectangle(
+				config.x,
+				config.y,
+				config.width,
+				config.height,
+				options
+			);
+		} else if (config.type === "circle") {
+			if (!config.radius) {
+				throw new Error("Radius required for circle objects");
+			}
+			body = Matter.Bodies.circle(config.x, config.y, config.radius, options);
+		} else {
+			throw new Error(`Unknown object type: ${config.type}`);
+		}
+
+		// Add the body to the world
+		Matter.World.add(world, body);
+
+		// Return a complete interactive object
+		return {
+			id: config.id,
+			config,
+			body,
+		};
+	},
+
+	/**
+	 * Create all interactive objects defined in Constants
+	 *
+	 * @param {Matter.World} world - The Matter.js world
+	 * @returns {Map<string, InteractiveObject>} - Map of created objects with their IDs as keys
+	 */
+	createAllInteractiveObjects: function (
+		world: Matter.World
+	): Map<string, InteractiveObject> {
+		const objects = new Map<string, InteractiveObject>();
+
+		Constants.INTERACTIVE_OBJECTS.forEach((config) => {
+			const object = this.createInteractiveObject(world, config);
+			objects.set(object.id, object);
+		});
+
+		return objects;
 	},
 
 	/**

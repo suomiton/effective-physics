@@ -7,6 +7,8 @@
  * It makes these constants available globally and as a module export.
  */
 
+import type { InteractiveObjectConfig } from "./types";
+
 /**
  * Global Constants object containing all application configuration values
  */
@@ -46,6 +48,24 @@ const Constants = {
 		WEBGL: "webgl",
 		CANVAS_2D: "2d",
 	},
+
+	// Interactive objects configuration
+	INTERACTIVE_OBJECTS: [
+		{
+			id: "main-block",
+			type: "rectangle" as const,
+			x: 320, // center of canvas width
+			y: 240, // center of canvas height
+			width: 50,
+			height: 50,
+			color: "#4444ff",
+			mass: 10,
+			frictionAir: 0.0,
+			restitution: 0,
+			isStatic: false,
+			isDraggable: true,
+		},
+	] as const as InteractiveObjectConfig[],
 };
 
 // Make it available globally

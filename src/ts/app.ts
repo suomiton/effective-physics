@@ -12,10 +12,19 @@ import Constants from "./constants";
 import { CanvasManager } from "./canvas-manager";
 import { PhysicsUtils } from "./shared";
 import { Renderer2D } from "./renderer-2d";
-import type { RendererWebGLInstance } from "./types";
+import { InteractiveWorld } from "./interactive-world";
+import { InteractiveBlock } from "./interactive-block";
+import type { RendererWebGLInstance, InteractiveObjectConfig } from "./types";
 
 // Add Matter.js to window for legacy compatibility
 (window as any).Matter = Matter;
+
+// Declare global interactiveWorld for access from other modules or console
+declare global {
+	interface Window {
+		interactiveWorld: InteractiveWorld;
+	}
+}
 
 /**
  * Initialize the application
@@ -49,15 +58,19 @@ function initApp(): void {
 	// Create physical boundaries
 	const boundaries = PhysicsUtils.createBoundaries(canvas, engine.world);
 
-	// Create draggable block
-	const block = PhysicsUtils.createBlock(
-		engine.world,
-		canvas.width / 2,
-		canvas.height / 2
-	);
+	// Create interactive world to manage objects
+	const interactiveWorld = new InteractiveWorld(engine, canvas);
 
-	// Set up mouse interactions
-	CanvasManager.setupMouseEvents(canvas, block, engine);
+	// Make it globally available
+	window.interactiveWorld = interactiveWorld;
+
+	// Create interactive objects from configuration
+	for (const config of Constants.INTERACTIVE_OBJECTS) {
+		interactiveWorld.create(config);
+	}
+
+	// Add a demo button to create new blocks
+	setupDemoButtons();
 
 	// Check URL query parameters for renderer selection
 	const urlParams = new URLSearchParams(window.location.search);
@@ -121,6 +134,55 @@ function initApp(): void {
 	// Start the physics engine
 	const runner = Matter.Runner.create();
 	Matter.Runner.run(runner, engine);
+}
+
+/**
+ * Set up demo buttons for creating interactive blocks
+ */
+function setupDemoButtons(): void {
+	// Create add block button
+	const addBlockButton = document.createElement("button");
+	addBlockButton.textContent = "Add Random Block";
+	addBlockButton.addEventListener("click", () => {
+		// Get random position within canvas
+		const width = Constants.CANVAS.WIDTH;
+		const height = Constants.CANVAS.HEIGHT;
+		const x = Math.random() * (width - 100) + 50;
+		const y = Math.random() * (height - 200) + 50;
+
+		// Random properties
+		const isCircle = Math.random() > 0.5;
+		const size = Math.random() * 40 + 20;
+		const color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+
+		// Create the object config
+		const config: Partial<InteractiveObjectConfig> = {
+			type: isCircle ? "circle" : "rectangle",
+			x,
+			y,
+			color,
+			mass: Math.random() * 10 + 1,
+			restitution: Math.random() * 0.5,
+		};
+
+		// Add type-specific properties
+		if (isCircle) {
+			config.radius = size;
+		} else {
+			config.width = size * 1.5;
+			config.height = size;
+		}
+
+		// Create the object
+		const block = window.interactiveWorld.create(config);
+		console.log("Created new block:", block);
+	});
+
+	// Add to controls
+	const controls = document.querySelector(".controls");
+	if (controls) {
+		controls.appendChild(addBlockButton);
+	}
 }
 
 /**

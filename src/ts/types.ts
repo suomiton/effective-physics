@@ -59,6 +59,28 @@ export interface MousePosition {
 	y: number;
 }
 
+export interface InteractiveObjectConfig {
+	id: string;
+	type: "rectangle" | "circle";
+	x: number;
+	y: number;
+	width?: number;
+	height?: number;
+	radius?: number;
+	color: string;
+	mass: number;
+	frictionAir: number;
+	restitution: number;
+	isStatic: boolean;
+	isDraggable: boolean;
+}
+
+export interface InteractiveObject {
+	id: string;
+	config: InteractiveObjectConfig;
+	body: Matter.Body;
+}
+
 // Declare global constants that will be available in the window object
 declare global {
 	interface Window {
@@ -68,5 +90,6 @@ declare global {
 		renderWebGL: RendererWebGLInstance | null;
 		Matter: typeof Matter;
 		THREE: typeof THREE;
+		interactiveObjects?: Map<string, InteractiveObject>;
 	}
 }
