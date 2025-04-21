@@ -24,9 +24,11 @@ window.render2D = null;
 window.renderWebGL = null;
 
 // Matter.js engine setup
-const engine = Matter.Engine.create({ enableSleeping: true });
+const engine = Matter.Engine.create({
+	enableSleeping: Constants.PHYSICS.SLEEP_ENABLED
+});
 const world = engine.world;
-world.gravity.y = 1.0;
+world.gravity.y = Constants.PHYSICS.GRAVITY;
 
 // Create the engine runner
 const runner = Matter.Runner.create();
@@ -39,39 +41,52 @@ const block = PhysicsUtils.createBlock(world, 300, 400, 50, 50);
 // Set up mouse interactions for dragging
 CanvasManager.setupMouseEvents(canvas, block, engine);
 
-// Read renderer preference from URL query parameter
+/**
+ * Read renderer preference from URL query parameter
+ * @returns {string} - The renderer type to use
+ */
 function getPreferredRenderer() {
 	const urlParams = new URLSearchParams(window.location.search);
 	const renderer = urlParams.get('renderer');
 
 	// Return the renderer from query param if valid, otherwise default to 'webgl'
-	return (renderer === '2d' || renderer === 'webgl') ? renderer : 'webgl';
+	return (renderer === Constants.RENDERER.CANVAS_2D ||
+		renderer === Constants.RENDERER.WEBGL) ?
+		renderer : Constants.RENDERER.WEBGL;
 }
 
 // Initialize the renderer based on URL query parameter
 initializeRenderer(getPreferredRenderer());
 
 // Set up renderer switching UI
-const renderEngineSelect = document.getElementById('renderEngineSelect');
-if (renderEngineSelect) {
-	renderEngineSelect.addEventListener('change', () => {
-		const chosen = renderEngineSelect.value;
-		try {
-			switchRenderer(chosen);
-		} catch (e) {
-			console.error("Failed to switch renderer:", e);
-			alert("Failed to switch renderer. Please refresh the page.");
-		}
+setupUI();
+
+/**
+ * Set up UI event listeners
+ */
+function setupUI() {
+	const renderEngineSelect = document.getElementById('renderEngineSelect');
+	if (renderEngineSelect) {
+		renderEngineSelect.addEventListener('change', () => {
+			const chosen = renderEngineSelect.value;
+			try {
+				switchRenderer(chosen);
+			} catch (e) {
+				console.error("Failed to switch renderer:", e);
+				alert("Failed to switch renderer. Please refresh the page.");
+			}
+		});
+	}
+
+	// Set up sand button
+	document.getElementById('dropSandButton').addEventListener('click', () => {
+		PhysicsUtils.dropSand(canvas, world);
 	});
 }
 
-// Set up sand button
-document.getElementById('dropSandButton').addEventListener('click', () => {
-	PhysicsUtils.dropSand(canvas, world);
-});
-
 /**
  * Switch between renderers
+ * @param {string} rendererType - The type of renderer to switch to
  */
 function switchRenderer(rendererType) {
 	// Stop current renderer
@@ -89,28 +104,29 @@ function switchRenderer(rendererType) {
 
 /**
  * Initialize the specified renderer
+ * @param {string} rendererType - The type of renderer to initialize
  */
 function initializeRenderer(rendererType) {
 	try {
-		if (rendererType === 'webgl') {
+		if (rendererType === Constants.RENDERER.WEBGL) {
 			window.renderWebGL = RendererWebGL.create(engine, canvas);
 			RendererWebGL.start(window.renderWebGL);
-			window.currentRenderer = 'webgl';
+			window.currentRenderer = Constants.RENDERER.WEBGL;
 		} else {
 			window.render2D = Renderer2D.create(engine, canvas);
 			Renderer2D.start(window.render2D);
-			window.currentRenderer = '2d';
+			window.currentRenderer = Constants.RENDERER.CANVAS_2D;
 		}
 	} catch (e) {
 		console.error(`Failed to initialize ${rendererType} renderer:`, e);
 
 		// If WebGL fails, try 2D as fallback
-		if (rendererType === 'webgl' && !render2D) {
+		if (rendererType === Constants.RENDERER.WEBGL && !window.render2D) {
 			alert("WebGL renderer failed. Falling back to 2D renderer.");
 			try {
-				render2D = Renderer2D.create(engine, canvas);
-				Renderer2D.start(render2D);
-				window.currentRenderer = '2d';
+				window.render2D = Renderer2D.create(engine, canvas);
+				Renderer2D.start(window.render2D);
+				window.currentRenderer = Constants.RENDERER.CANVAS_2D;
 			} catch (fallbackError) {
 				console.error("Even 2D fallback failed:", fallbackError);
 				alert("All renderers failed. Please check your browser compatibility.");
@@ -123,10 +139,10 @@ function initializeRenderer(rendererType) {
  * Stop the current renderer
  */
 function stopCurrentRenderer() {
-	if (window.currentRenderer === 'webgl' && window.renderWebGL) {
+	if (window.currentRenderer === Constants.RENDERER.WEBGL && window.renderWebGL) {
 		RendererWebGL.stop(window.renderWebGL);
 		window.renderWebGL = null;
-	} else if (window.currentRenderer === '2d' && window.render2D) {
+	} else if (window.currentRenderer === Constants.RENDERER.CANVAS_2D && window.render2D) {
 		Renderer2D.stop(window.render2D);
 		window.render2D = null;
 	}

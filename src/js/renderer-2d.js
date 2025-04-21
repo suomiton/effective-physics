@@ -4,6 +4,9 @@
 const Renderer2D = {
 	/**
 	 * Create a new 2D renderer
+	 * @param {Matter.Engine} engine - The Matter.js engine
+	 * @param {HTMLCanvasElement} canvas - The canvas element
+	 * @returns {Matter.Render} - The Matter.js renderer
 	 */
 	create: function (engine, canvas) {
 		try {
@@ -18,7 +21,7 @@ const Renderer2D = {
 					width: canvas.width,
 					height: canvas.height,
 					wireframes: false,
-					background: '#ffffff'
+					background: Constants.COLORS.BACKGROUND
 				}
 			});
 
@@ -31,6 +34,7 @@ const Renderer2D = {
 
 	/**
 	 * Start the renderer
+	 * @param {Matter.Render} render - The Matter.js renderer
 	 */
 	start: function (render) {
 		Matter.Render.run(render);
@@ -39,6 +43,7 @@ const Renderer2D = {
 
 	/**
 	 * Stop the renderer
+	 * @param {Matter.Render} render - The Matter.js renderer
 	 */
 	stop: function (render) {
 		if (render) {

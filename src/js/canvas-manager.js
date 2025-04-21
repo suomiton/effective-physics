@@ -9,8 +9,8 @@ const CanvasManager = {
 		// Create container for the canvas
 		const canvasContainer = document.createElement('div');
 		canvasContainer.id = 'canvasContainer';
-		canvasContainer.style.width = '640px';
-		canvasContainer.style.height = '480px';
+		canvasContainer.style.width = Constants.CANVAS.WIDTH + 'px';
+		canvasContainer.style.height = Constants.CANVAS.HEIGHT + 'px';
 
 		// Insert container before the original canvas
 		originalCanvas.parentNode.insertBefore(canvasContainer, originalCanvas);
@@ -37,8 +37,8 @@ const CanvasManager = {
 		// Create a fresh canvas
 		const newCanvas = document.createElement('canvas');
 		newCanvas.id = 'simulationCanvas';
-		newCanvas.width = 640;
-		newCanvas.height = 480;
+		newCanvas.width = Constants.CANVAS.WIDTH;
+		newCanvas.height = Constants.CANVAS.HEIGHT;
 		container.appendChild(newCanvas);
 
 		return newCanvas;
@@ -53,7 +53,7 @@ const CanvasManager = {
 
 		const getMousePosition = (e, currentRenderer) => {
 			// Use renderer-specific coordinate conversion if available
-			if (currentRenderer === 'webgl' && window.renderWebGL && window.renderWebGL.getMouseCoordinates) {
+			if (currentRenderer === Constants.RENDERER.WEBGL && window.renderWebGL && window.renderWebGL.getMouseCoordinates) {
 				return window.renderWebGL.getMouseCoordinates(e.clientX, e.clientY);
 			}
 

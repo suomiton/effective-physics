@@ -1,9 +1,12 @@
 /**
- * Shared utility functions
+ * Shared utility functions for physics objects
  */
 const PhysicsUtils = {
 	/**
-	 * Create boundary walls
+	 * Create boundary walls around the canvas
+	 * @param {HTMLCanvasElement} canvas - The canvas element
+	 * @param {Matter.World} world - The Matter.js world
+	 * @returns {Object} - References to the boundary bodies
 	 */
 	createBoundaries: function (canvas, world) {
 		const wallThickness = 50;
@@ -49,14 +52,20 @@ const PhysicsUtils = {
 	},
 
 	/**
-	 * Create a block
+	 * Create a physics block
+	 * @param {Matter.World} world - The Matter.js world
+	 * @param {number} x - X position
+	 * @param {number} y - Y position
+	 * @param {number} width - Block width
+	 * @param {number} height - Block height
+	 * @returns {Matter.Body} - The created block body
 	 */
 	createBlock: function (world, x, y, width, height) {
 		const block = Matter.Bodies.rectangle(x, y, width, height, {
 			mass: 10,
 			frictionAir: 0.0,
 			restitution: 0,
-			render: { fillStyle: 'blue' }
+			render: { fillStyle: Constants.COLORS.BLOCK }
 		});
 
 		Matter.World.add(world, block);
@@ -65,48 +74,24 @@ const PhysicsUtils = {
 
 	/**
 	 * Create sand particles in a cluster
+	 * @param {HTMLCanvasElement} canvas - The canvas element
+	 * @param {Matter.World} world - The Matter.js world
 	 */
 	dropSand: function (canvas, world) {
-		const sandColors = [
-			'#E6C288',
-			'#D4B16A',
-			'#C19A53',
-			'#B3894D',
-			'#F0D6A7'
-		];
-
+		const sandColors = Constants.COLORS.SAND;
 		const clusterCenter = { x: canvas.width / 2, y: 100 };
 		const clusterRadius = 80;
 		const positions = [];
 		const maxAttempts = 300;
+		const particleRadius = 2;
+		const particleCount = 500;
 
-		for (let i = 0; i < 500; i++) {
-			let validPos = null;
-			for (let attempt = 0; attempt < maxAttempts && !validPos; attempt++) {
-				const angle = Math.random() * 2 * Math.PI;
-				const r = Math.random() * clusterRadius;
-				const xPos = clusterCenter.x + r * Math.cos(angle);
-				const yPos = clusterCenter.y + r * Math.sin(angle);
-
-				let tooClose = false;
-				for (const p of positions) {
-					const dx = xPos - p.x;
-					const dy = yPos - p.y;
-					if (Math.sqrt(dx * dx + dy * dy) < 2) {
-						tooClose = true;
-						break;
-					}
-				}
-
-				if (!tooClose) {
-					validPos = { x: xPos, y: yPos };
-					positions.push(validPos);
-				}
-			}
+		for (let i = 0; i < particleCount; i++) {
+			let validPos = this._findValidSandPosition(positions, clusterCenter, clusterRadius, particleRadius, maxAttempts);
 
 			if (!validPos) continue;
 
-			const particle = Matter.Bodies.circle(validPos.x, validPos.y, 2, {
+			const particle = Matter.Bodies.circle(validPos.x, validPos.y, particleRadius, {
 				mass: 0.01,
 				restitution: 0.0,
 				friction: 0.1,
@@ -118,5 +103,35 @@ const PhysicsUtils = {
 
 			Matter.World.add(world, particle);
 		}
+	},
+
+	/**
+	 * Helper function to find a valid position for a sand particle
+	 * @private
+	 */
+	_findValidSandPosition: function (positions, center, radius, particleRadius, maxAttempts) {
+		for (let attempt = 0; attempt < maxAttempts; attempt++) {
+			const angle = Math.random() * 2 * Math.PI;
+			const r = Math.random() * radius;
+			const xPos = center.x + r * Math.cos(angle);
+			const yPos = center.y + r * Math.sin(angle);
+
+			let tooClose = false;
+			for (const p of positions) {
+				const dx = xPos - p.x;
+				const dy = yPos - p.y;
+				if (Math.sqrt(dx * dx + dy * dy) < particleRadius * 2) {
+					tooClose = true;
+					break;
+				}
+			}
+
+			if (!tooClose) {
+				const validPos = { x: xPos, y: yPos };
+				positions.push(validPos);
+				return validPos;
+			}
+		}
+		return null;
 	}
 };

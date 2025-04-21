@@ -7,9 +7,9 @@ const MatterThree = {
 			engine: null,
 			element: document.body,
 			canvas: null,
-			width: 800,
-			height: 600,
-			background: '#ffffff',
+			width: Constants.CANVAS.WIDTH,
+			height: Constants.CANVAS.HEIGHT,
+			background: Constants.COLORS.BACKGROUND,
 			wireframeBackground: false,
 			hasShadows: true
 		};
@@ -60,7 +60,7 @@ const MatterThree = {
 			if (body.label === 'Circle Body') {
 				geometry = new THREE.CircleGeometry(body.circleRadius, 32);
 				material = new THREE.MeshStandardMaterial({
-					color: body.render.fillStyle || 0x4444ff,
+					color: body.render.fillStyle || Constants.COLORS.DEFAULT_OBJECT,
 					side: THREE.DoubleSide
 				});
 				mesh = new THREE.Mesh(geometry, material);
@@ -83,7 +83,7 @@ const MatterThree = {
 				}
 
 				material = new THREE.MeshStandardMaterial({
-					color: body.render.fillStyle || 0x4444ff,
+					color: body.render.fillStyle || Constants.COLORS.DEFAULT_OBJECT,
 					side: THREE.DoubleSide
 				});
 				mesh = new THREE.Mesh(geometry, material);

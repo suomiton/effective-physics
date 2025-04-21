@@ -2,25 +2,37 @@
  * WebGL renderer module using Three.js
  */
 
-// Ensure THREE.js and Matter.js are imported
+// Default renderer config
+const WEBGL_DEFAULTS = {
+	background: Constants.COLORS.BACKGROUND,
+	defaultObjectColor: Constants.COLORS.DEFAULT_OBJECT,
+	hasShadows: true,
+	usesOrthographicCamera: true
+};
+
 const RendererWebGL = {
 	/**
 	 * Create a new WebGL renderer
+	 * @param {Matter.Engine} engine - The Matter.js engine
+	 * @param {HTMLCanvasElement} canvas - The canvas element
+	 * @param {Object} options - Optional renderer configuration
+	 * @returns {Object} - The WebGL renderer instance
 	 */
-	create: function (engine, canvas) {
+	create: function (engine, canvas, options = {}) {
 		try {
 			// Check if THREE is available
 			if (typeof THREE === 'undefined') {
 				throw new Error("THREE.js is not loaded");
 			}
 
-			// Create a custom Matter-THREE renderer with orthographic camera
+			// Create a custom Matter-THREE renderer
 			const webGLRenderer = {
 				engine: engine,
 				canvas: canvas,
 				scene: new THREE.Scene(),
 				bodies: new Map(),
 				mousePosition: new THREE.Vector2(),
+				config: Object.assign({}, WEBGL_DEFAULTS, options),
 
 				init: function () {
 					// Set up WebGL renderer
@@ -29,25 +41,65 @@ const RendererWebGL = {
 						antialias: true,
 						alpha: true
 					});
-					this.webglRenderer.setClearColor(0xffffff, 1);
+					this.webglRenderer.setClearColor(this.config.background, 1);
 					this.webglRenderer.setSize(this.canvas.width, this.canvas.height);
+					this.webglRenderer.shadowMap.enabled = this.config.hasShadows;
 
-					// Create orthographic camera to match 2D coordinates exactly
-					// Note: We're inverting the top/bottom to match Matter.js Y coordinates
-					this.camera = new THREE.OrthographicCamera(
-						-this.canvas.width / 2, this.canvas.width / 2, // left, right
-						this.canvas.height / 2, -this.canvas.height / 2, // top, bottom
-						0.1, 1000 // near, far
-					);
-					// Center the camera on the canvas
-					this.camera.position.set(0, 0, 100);
+					// Create camera (orthographic or perspective based on config)
+					this._setupCamera();
+
+					// Add lights
+					this._setupLights();
+
+					// Add optional grid for reference
+					this._setupGrid();
+
+					return this;
+				},
+
+				_setupCamera: function () {
+					if (this.config.usesOrthographicCamera) {
+						// Orthographic camera to match 2D coordinates exactly
+						this.camera = new THREE.OrthographicCamera(
+							-this.canvas.width / 2, this.canvas.width / 2, // left, right
+							this.canvas.height / 2, -this.canvas.height / 2, // top, bottom
+							0.1, 1000 // near, far
+						);
+						// Center the camera on the canvas
+						this.camera.position.set(0, 0, 100);
+					} else {
+						// Perspective camera
+						this.camera = new THREE.PerspectiveCamera(
+							75,
+							this.canvas.width / this.canvas.height,
+							0.1,
+							1000
+						);
+						this.camera.position.z = this.canvas.height;
+					}
 					this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+				},
 
+				_setupLights: function () {
 					// Add ambient light
 					const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 					this.scene.add(ambientLight);
 
-					// Add a simple ground plane for reference
+					// Add directional light with shadows
+					if (this.config.hasShadows) {
+						const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+						directionalLight.position.set(
+							this.canvas.width / 2,
+							-this.canvas.height / 2,
+							this.canvas.height
+						);
+						directionalLight.castShadow = true;
+						this.scene.add(directionalLight);
+					}
+				},
+
+				_setupGrid: function () {
+					// Create a simple ground plane for reference
 					const groundGeometry = new THREE.PlaneGeometry(this.canvas.width, this.canvas.height);
 					const groundMaterial = new THREE.MeshBasicMaterial({
 						color: 0xf8f8f8,
@@ -56,7 +108,7 @@ const RendererWebGL = {
 						opacity: 0.5
 					});
 					const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-					ground.position.set(0, 0, -5); // Centered at (0, 0) in the camera's view
+					ground.position.set(0, 0, -5);
 					this.scene.add(ground);
 
 					// Optional grid helper
@@ -64,13 +116,11 @@ const RendererWebGL = {
 						const gridSize = Math.max(this.canvas.width, this.canvas.height);
 						const gridHelper = new THREE.GridHelper(gridSize, 10, 0x888888, 0xdddddd);
 						gridHelper.rotation.x = Math.PI / 2;
-						gridHelper.position.set(0, 0, -1); // Centered at (0, 0) in the camera's view
+						gridHelper.position.set(0, 0, -1);
 						this.scene.add(gridHelper);
 					} catch (e) {
 						console.warn("Could not add grid helper:", e);
 					}
-
-					return this;
 				},
 
 				run: function () {
@@ -83,6 +133,10 @@ const RendererWebGL = {
 						cancelAnimationFrame(this.frameRequestId);
 					}
 					// Clean up THREE.js objects
+					this._disposeObjects();
+				},
+
+				_disposeObjects: function () {
 					this.bodies.forEach((mesh) => {
 						if (mesh.geometry) mesh.geometry.dispose();
 						if (mesh.material) mesh.material.dispose();
@@ -94,10 +148,10 @@ const RendererWebGL = {
 				// Convert color string to THREE.js color
 				parseColor: function (colorString) {
 					try {
-						return new THREE.Color(colorString || 0x4444ff);
+						return new THREE.Color(colorString || this.config.defaultObjectColor);
 					} catch (e) {
 						console.warn("Invalid color:", colorString, e);
-						return new THREE.Color(0x4444ff);
+						return new THREE.Color(this.config.defaultObjectColor);
 					}
 				},
 
@@ -165,11 +219,19 @@ const RendererWebGL = {
 							// Update position and rotation
 							const mesh = this.bodies.get(body.id);
 							if (mesh) {
-								mesh.position.set(
-									body.position.x - this.canvas.width / 2, // Adjust for camera centering
-									this.canvas.height / 2 - body.position.y, // Adjust for camera centering and flip Y-axis
-									0
-								);
+								if (this.config.usesOrthographicCamera) {
+									mesh.position.set(
+										body.position.x - this.canvas.width / 2, // Adjust for camera centering
+										this.canvas.height / 2 - body.position.y, // Adjust for camera centering and flip Y-axis
+										0
+									);
+								} else {
+									mesh.position.set(
+										body.position.x,
+										this.canvas.height - body.position.y,
+										0
+									);
+								}
 								mesh.rotation.z = -body.angle;
 							}
 						});
@@ -193,7 +255,7 @@ const RendererWebGL = {
 					}
 				},
 
-				// Convert Three.js coordinates to Matter.js world coordinates
+				// Convert coordinates to Matter.js world coordinates
 				getMouseCoordinates: function (clientX, clientY) {
 					try {
 						const rect = this.canvas.getBoundingClientRect();
