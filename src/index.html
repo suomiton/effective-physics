@@ -4,55 +4,28 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Sand Physics Simulation (Matter.js Edition)</title>
+	<title>Sand Physics Simulation (TypeScript Edition)</title>
 	<link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
+	<h1>Physics Simulation</h1>
 	<canvas id="simulationCanvas" width="640" height="480"></canvas>
-	<button id="dropSandButton">Drop Sand</button>
-	<select id="renderEngineSelect">
-		<option value="2d">Canvas 2D</option>
-		<option value="webgl">Three.js (WebGL)</option>
-	</select>
+	
+	<div class="controls">
+		<button id="dropSandButton">Drop Sand</button>
+		<select id="rendererSelect">
+			<option value="2d">Canvas 2D</option>
+			<option value="webgl">Three.js (WebGL)</option>
+		</select>
+	</div>
 
 	<!-- Add Matter.js from CDN -->
 	<script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 	<!-- Add Three.js -->
 	<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
-	<!-- Load constants first so they're available to all other scripts -->
-	<script src="js/constants.js"></script>
-
-	<!-- Add Matter-THREE integration -->
-	<script src="js/matter-three.js"></script>
-
-	<!-- Modular code organization -->
-	<script src="js/shared.js"></script>
-	<script src="js/canvas-manager.js"></script>
-	<script src="js/renderer-2d.js"></script>
-	<script src="js/renderer-webgl.js"></script>
-	<script src="js/app.js"></script>
-
-	<!-- Script to handle renderer selection via query parameter -->
-	<script>
-		// Initialize the select dropdown based on the current query parameter
-		document.addEventListener('DOMContentLoaded', () => {
-			const urlParams = new URLSearchParams(window.location.search);
-			const renderer = urlParams.get('renderer');
-			const select = document.getElementById('renderEngineSelect');
-
-			if (renderer && (renderer === '2d' || renderer === 'webgl')) {
-				select.value = renderer;
-			}
-
-			// Change renderer by refreshing the page with a new query parameter
-			select.addEventListener('change', () => {
-				const newRenderer = select.value;
-				window.location.href = window.location.pathname + '?renderer=' + newRenderer;
-			});
-		});
-	</script>
+	<!-- Load bundled JavaScript (will be injected by webpack) -->
 </body>
 
 </html>

@@ -2,10 +2,13 @@
   "name": "sand-physics-simulation",
   "version": "1.0.0",
   "description": "A web application for simulating sand physics with draggable blocks and particle interactions.",
-  "main": "src/js/app.js",
+  "main": "dist/bundle.js",
   "scripts": {
-    "start": "live-server src",
-    "build": "echo 'Build step not defined'"
+    "start": "webpack serve --open",
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development",
+    "watch": "webpack --watch",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "physics",
@@ -15,8 +18,18 @@
   ],
   "author": "Your Name",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
-    "live-server": "^1.2.1"
+    "@types/matter-js": "^0.19.8",
+    "@types/three": "^0.175.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.0",
+    "live-server": "^1.2.1",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
   }
 }
