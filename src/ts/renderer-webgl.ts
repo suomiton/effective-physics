@@ -8,7 +8,7 @@
  * 2D physics and 3D visualization.
  */
 
-import * as Matter from "matter-js";
+import Matter from "matter-js";
 import * as THREE from "three";
 import Constants from "./constants";
 import type { RendererWebGLInstance, RendererWebGLConfig } from "./types";

@@ -5,7 +5,7 @@
  * This file defines interfaces and types used throughout the application.
  */
 
-import * as Matter from "matter-js";
+import Matter from "matter-js";
 import * as THREE from "three";
 import Constants from "./constants";
 

@@ -7,7 +7,7 @@
  * interface for starting and stopping rendering.
  */
 
-import * as Matter from "matter-js";
+import Matter from "matter-js";
 import Constants from "./constants";
 
 /**

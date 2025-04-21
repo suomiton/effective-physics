@@ -7,7 +7,7 @@
  * coordinator between physics, rendering, and user interaction components.
  */
 
-import * as Matter from "matter-js";
+import Matter from "matter-js";
 import Constants from "./constants";
 import { CanvasManager } from "./canvas-manager";
 import { PhysicsUtils } from "./shared";
