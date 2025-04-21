@@ -10,22 +10,22 @@ import * as Matter from "matter-js";
 
 // Import only the specific Three.js components we need
 import {
-  Scene,
-  WebGLRenderer,
-  OrthographicCamera,
-  AmbientLight,
-  DirectionalLight,
-  PlaneGeometry,
-  MeshBasicMaterial,
-  MeshLambertMaterial,
-  CircleGeometry,
-  ShapeGeometry,
-  Mesh,
-  Shape,
-  Color,
-  PCFSoftShadowMap,
-  Material
-} from 'three';
+	Scene,
+	WebGLRenderer,
+	OrthographicCamera,
+	AmbientLight,
+	DirectionalLight,
+	PlaneGeometry,
+	MeshBasicMaterial,
+	MeshLambertMaterial,
+	CircleGeometry,
+	ShapeGeometry,
+	Mesh,
+	Shape,
+	Color,
+	PCFSoftShadowMap,
+	Material,
+} from "three";
 
 import Constants from "./constants";
 import type { MatterThreeInstance } from "./types";
@@ -235,7 +235,7 @@ export function MatterThree(options: {
 			-halfWidth,
 			halfWidth,
 			halfHeight,
-			- halfHeight,
+			-halfHeight,
 			1,
 			1000
 		);

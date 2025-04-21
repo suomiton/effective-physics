@@ -11,48 +11,48 @@
 import * as Matter from "matter-js";
 
 // Import only the specific Three.js components we need
-import { 
-  Scene, 
-  WebGLRenderer, 
-  OrthographicCamera, 
-  PerspectiveCamera,
-  AmbientLight, 
-  DirectionalLight, 
-  GridHelper,
-  Vector2, 
-  Color, 
-  Mesh, 
-  Shape, 
-  CircleGeometry,
-  ExtrudeGeometry,
-  MeshPhongMaterial,
-  DoubleSide,
-  PCFSoftShadowMap,
-  Material
-} from 'three';
+import {
+	Scene,
+	WebGLRenderer,
+	OrthographicCamera,
+	PerspectiveCamera,
+	AmbientLight,
+	DirectionalLight,
+	GridHelper,
+	Vector2,
+	Color,
+	Mesh,
+	Shape,
+	CircleGeometry,
+	ExtrudeGeometry,
+	MeshPhongMaterial,
+	DoubleSide,
+	PCFSoftShadowMap,
+	Material,
+} from "three";
 
 import Constants from "./constants";
 import type { RendererWebGLInstance, RendererWebGLConfig } from "./types";
 
 // Add Three.js imports to a THREE namespace for backward compatibility
 const THREE = {
-  Scene,
-  WebGLRenderer,
-  OrthographicCamera,
-  PerspectiveCamera,
-  AmbientLight,
-  DirectionalLight,
-  GridHelper,
-  Vector2,
-  Color,
-  Mesh,
-  Shape,
-  CircleGeometry,
-  ExtrudeGeometry,
-  MeshPhongMaterial,
-  DoubleSide,
-  PCFSoftShadowMap,
-  Material
+	Scene,
+	WebGLRenderer,
+	OrthographicCamera,
+	PerspectiveCamera,
+	AmbientLight,
+	DirectionalLight,
+	GridHelper,
+	Vector2,
+	Color,
+	Mesh,
+	Shape,
+	CircleGeometry,
+	ExtrudeGeometry,
+	MeshPhongMaterial,
+	DoubleSide,
+	PCFSoftShadowMap,
+	Material,
 };
 
 // Add Three.js to window for legacy compatibility
